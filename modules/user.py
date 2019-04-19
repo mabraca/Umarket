@@ -1,6 +1,8 @@
-import main, db_config
+from main import *
 
-@app.route('/register', methods=['POST'])
+from . import modules
+
+@modules.route('/register', methods=['POST'])
 def addUser():
     try:
         _json= request.get_json(force=True)
@@ -36,32 +38,32 @@ def addUser():
                                     resp = jsonify({"status":'success', "msj":"El usuario fue registrado","token":_token})                                    
                                     resp.status_code = 200                                    
                                     send_mail(_token,_strcorreo,nombapell)
-                                    sendResponse(response)
+                                    return sendResponse(response)
                                 else:
                                     resp = jsonify({"status":'error', "msj":"El correo ya se encuentra registrado"})
-                                    sendResponse(resp)
+                                    return  sendResponse(resp)
                             else:
                                 resp = jsonify({"status":'error', "msj":"El usuario ya se encuentra registrado"})
-                                sendResponse(resp)
+                                return sendResponse(resp)
                         else:
                             resp = jsonify({"status":'error', "msj":"Debe ingresar un apellido"})
-                            sendResponse(resp)
+                            return sendResponse(resp)
                     else:
                         resp = jsonify({"status":'error', "msj":"Debe ingresar un nombre"})
-                        sendResponse(resp)
+                        return sendResponse(resp)
                 else:
                     resp = jsonify({"status":'error', "msj":"Debe ingresar un correo"})
-                    sendResponse(response)
+                    return  sendResponse(response)
             else:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar una contraseña"})
-                sendResponse(resp)
+                return sendResponse(resp)
         else:
             resp = jsonify({"status":'error', "msj":"Debe ingresar un usuario"})
-            sendResponse(response)
+            return sendResponse(response)
     except Exception as e:
         print(e)
 
-@app.route('/users') 
+@modules.route('/users') 
 def users():
     try:
         conn = mysql.connect()
@@ -71,17 +73,18 @@ def users():
         if rows:
             resp = jsonify(rows)            
             resp.status_code = 200
-            sendResponse(resp)
+            return sendResponse(resp)
         elif not rows:
             resp = jsonify({"status":'error', "msj":"No se encuentran usuarios registrados"})
-            sendResponse(resp)
+            return sendResponse(resp)      
     except Exception as e:
         print(e)
     finally:
         cursor.close()
         conn.close()
+        
 
-@app.route('/user', methods=['POST'])
+@modules.route('/user', methods=['POST'])
 def user():
     try:
         _json = request.json
@@ -92,14 +95,15 @@ def user():
         row = cursor.fetchone()
         resp = jsonify(row)        
         resp.status_code = 200
-        sendResponse(resp)
+        return sendResponse(resp)
+
     except Exception as e:
         print(e)
     finally:
         cursor.close()
         conn.close()
 
-@app.route('/user_login', methods=['POST'])
+@modules.route('/user_login', methods=['POST'])
 def userLogin():
     try:             
         _json= request.get_json(force=True)
@@ -118,26 +122,26 @@ def userLogin():
                             _token = ''.join(random.choice(caracteres) for _ in range(longitud))
                             resp = jsonify({"status":"success", "msj":"El usuario logeado","strusuario":existe_user['strusuario'], "strnombres":existe_user['strnombres'], "strapellidos":existe_user['strapellidos'],"strcorreo":existe_user['strcorreo_electronico'],"token":_token})                                                      
                             resp.status_code = 200
-                            sendResponse(resp)
+                            return sendResponse(resp)
                         else:
                             resp = jsonify({"status":'warning', "msj":"La contraseña es inválida"})
-                            sendResponse(resp)                       
+                            return sendResponse(resp)                       
                     else:
-                        resp = jsonify({"status": 'error', "msj": "El usuario inactivo"})
-                        sendResponse(resp)
+                        resp = jsonify({"status": 'warning', "msj": "El usuario inactivo"})
+                        return sendResponse(resp)
                 else:
                     resp = jsonify({"status": 'error', "msj": "El usuario no existe"})
-                    sendResponse(resp)
+                    return sendResponse(resp)
             else:
                 resp = jsonify({"status": 'error', "msj": "Debe ingresar una contraseña"})
-                sendResponse(resp)
+                return sendResponse(resp)
         else:
-            resp = jsonify({"status": False, "msj": "Debe ingresar un usuario"})
-            sendResponse(resp)    
+            resp = jsonify({"status":"error", "msj": "Debe ingresar un usuario"})
+            return sendResponse(resp)    
     except Exception as e:
         print(e)
 
-@app.route('/update', methods=['POST'])   
+@modules.route('/update', methods=['POST'])   
 def updateUser():
     try:
         _json = request.json
@@ -161,7 +165,7 @@ def updateUser():
             conn.commit()
             resp = jsonify({"status":"success","msj":"El usuario fue actualizado"})
             resp.status_code = 200
-            sendResponse(resp)
+            return sendResponse(resp)
         else:
             return not_found()
     except Exception as e:
@@ -170,7 +174,7 @@ def updateUser():
         cursor.close()
         conn.close()
 
-@app.route('/delete/')
+@modules.route('/delete/')
 def deleteUser():
     try:
         conn = mysql.connect()
@@ -179,7 +183,7 @@ def deleteUser():
         conn.commit()
         resp = jsonify({"status":"success","msj":"El usuario fue eliminado"})
         resp.status_code = 200
-        sendResponse(resp)
+        return sendResponse(resp)
     except Exception as e:
         print(e)
     finally:
@@ -216,7 +220,7 @@ def email_validate(strcorreo):
         cursor.close()
         conn.close()
 
-@app.route('/token',methods=['POST'])
+@modules.route('/token',methods=['POST'])
 def token():
     try:        
         _json= request.get_json(force=True)
@@ -232,20 +236,20 @@ def token():
                     token=activate_user(_token)       
                     if token:
                         resp = jsonify({"status": 'success', "msj": "El token fue activado"})
-                        sendResponse(resp)
+                        return sendResponse(resp)
                     else:
                         resp = jsonify({"status": 'error', "msj": "El token no fue activado"})
-                        sendResponse(resp)
+                        return sendResponse(resp)
                 else:
                     resp = jsonify({"status": 'error', "msj": "El token fue utilizado"})
-                    sendResponse(resp)
+                    return sendResponse(resp)
                                 
             else:
                 resp = jsonify({"status": 'error', "msj": "El token es inválido"})
-                sendResponse(resp)             
+                return sendResponse(resp)             
         else:
             resp = jsonify({"status": 'error', "msj": "Debe ingresar un token"})
-            sendResponse(resp)
+            return sendResponse(resp)
     except Exception as e:
         print(e)
     finally:

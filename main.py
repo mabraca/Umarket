@@ -1,9 +1,7 @@
-import pymysql, string, random
 import socket, json
 from db_config import mysql, app, mail
-from flaskext.mysql import MySQL
-from flask import jsonify
-from flask import flash, request,make_response, current_app
+from flaskext.mysql import MySQL, pymysql
+from flask import flash, request,make_response, current_app, Blueprint, jsonify
 from werkzeug import generate_password_hash, check_password_hash
 import hashlib
 from flask_mail import Mail, Message
@@ -11,7 +9,7 @@ from validate_email import validate_email
 from modules import *
 import db_config
 
-#print_lock = threading.Lock()
+app.register_blueprint(modules)
 
 
 def send_mail(token,email,nombapell):
