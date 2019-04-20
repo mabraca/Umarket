@@ -8,6 +8,7 @@ def addUser():
         _json= request.get_json(force=True)
         _strcorreo = _json['stremail']
         _strusuario = _json['struser']
+        _id_rol=_json['introl']
         _strcontrasena = _json['strpassword']
         _strnombres = _json['strname']
         _strapellidos = _json['strsurname']
@@ -28,8 +29,8 @@ def addUser():
                                 existe_email=email_validate(_strcorreo)
                                 if not existe_email:
                                     # save edits
-                                    sql = "INSERT INTO dt_usuarios(strcorreo_electronico, strusuario, strcontrasena, strnombres, strapellidos, tb_estatus_id, token) VALUES(%s, %s, %s, %s, %s, %s, %s)"
-                                    data = (_strcorreo, _strusuario, _hashed_password.hexdigest(), _strnombres, _strapellidos, _bt_estatus_id, _token)
+                                    sql = "INSERT INTO dt_usuarios(strcorreo_electronico, strusuario, strcontrasena, id_rol, strnombres, strapellidos, tb_estatus_id, token) VALUES(%s, %s, %s, %s, %s, %s, %s)"
+                                    data = (_strcorreo, _strusuario, _hashed_password.hexdigest(),_id_rol,_strnombres, _strapellidos, _bt_estatus_id, _token)
                                     nombapell= _strnombres + " " + _strapellidos
                                     conn = mysql.connect()
                                     cursor = conn.cursor()
@@ -91,7 +92,7 @@ def user():
         _id = _json['id']
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute("SELECT * FROM dt_usuarios WHERE id=%s",_id)
+        cursor.execute("SELECT * FROM dt_usuarios WHERE id_usuario=%s",_id)
         row = cursor.fetchone()
         resp = jsonify(row)        
         resp.status_code = 200
