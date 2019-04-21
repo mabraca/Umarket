@@ -39,8 +39,7 @@ class Company():
 
 
     def registerCompany(self):
-        try:        
-            print("entro")                                                                                        
+        try:                                                                                                          
             # save edits
             sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo) VALUES(%s, %s, %s, %s, %s, %s, %s)"
             data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo)
@@ -62,7 +61,7 @@ class Company():
             #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM dt_empresa WHERE strrif_empresa=%s"           
+            sql="SELECT * FROM dt_empresa WHERE UPPER(strrif_empresa)=UPPER(%s)"           
             cursor.execute(sql,strrif_empresa)
             row = cursor.fetchall()
             return row
@@ -77,7 +76,7 @@ class Company():
             #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM dt_empresa WHERE strcorreo=%s"           
+            sql="SELECT * FROM dt_empresa WHERE UPPER(strcorreo)=UPPER(%s)"           
             cursor.execute(sql,strcorreo)
             row = cursor.fetchall()
             return row
@@ -87,13 +86,20 @@ class Company():
             cursor.close()
             conn.close()
     
-    def registerDocumentsCompany():
+    def registerDocumentsCompany(strulr,id_empresa,id_tipo):
         try:
-            pass
-        except expression as identifier:
-            pass
-        finally:
-            pass
+            conn=mysql.connect()
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            sql="INSERT INTO dt_documentos_empresa (id_empresa,id_tipo,strurl_documento)VALUES(%s, %s, %s)"
+            data=(id_empresa,id_tipo,strulr)
+            cursor.execute(sql,data)
+            resource=cursor.lastrowid
+            conn.commit()
+            return resource
+                    
+        except Exception as e:
+            print(e)
+        
 
 
     

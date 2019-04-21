@@ -1,66 +1,66 @@
 from main import *
-
 from . import modules
+import re
 
 @modules.route('/register', methods=['POST'])
 def addUser():
     try:
         _json= request.get_json(force=True)
         _strcorreo = _json['stremail']
-        _strusuario = _json['struser']
-        _id_rol=_json['introl']
+        #   _strusuario = _json['struser']
+        _id_rol=_json['id_rol']
         _strcontrasena = _json['strpassword']
         _strnombres = _json['strname']
         _strapellidos = _json['strsurname']
-        _bt_estatus_id = _json['bt_estatus_id']
+        #Por defecto se registra con el id_estatus
+
         caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
         longitud = 8  # La longitud que queremos
         _token = ''.join(random.choice(caracteres) for _ in range(longitud))
 
         # validate the received values
-        if  _strusuario and request.method == 'POST': 
-            if _strcontrasena:
-                if _strcorreo: 
-                    if _strnombres:
-                        if _strapellidos:                            
-                            _hashed_password = hashlib.md5(_strcontrasena.encode())
-                            existe_user=user_validate(_strusuario)
-                            if not existe_user:                                
-                                existe_email=email_validate(_strcorreo)
-                                if not existe_email:
-                                    # save edits
-                                    sql = "INSERT INTO dt_usuarios(strcorreo_electronico, strusuario, strcontrasena, id_rol, strnombres, strapellidos, tb_estatus_id, token) VALUES(%s, %s, %s, %s, %s, %s, %s)"
-                                    data = (_strcorreo, _strusuario, _hashed_password.hexdigest(),_id_rol,_strnombres, _strapellidos, _bt_estatus_id, _token)
-                                    nombapell= _strnombres + " " + _strapellidos
-                                    conn = mysql.connect()
-                                    cursor = conn.cursor()
-                                    cursor.execute(sql, data)
-                                    conn.commit()
-                                    resp = jsonify({"status":'success', "msj":"El usuario fue registrado","token":_token})                                    
-                                    resp.status_code = 200                                    
-                                    send_mail(_token,_strcorreo,nombapell)
-                                    return sendResponse(response)
-                                else:
-                                    resp = jsonify({"status":'error', "msj":"El correo ya se encuentra registrado"})
-                                    return  sendResponse(resp)
-                            else:
-                                resp = jsonify({"status":'error', "msj":"El usuario ya se encuentra registrado"})
-                                return sendResponse(resp)
-                        else:
-                            resp = jsonify({"status":'error', "msj":"Debe ingresar un apellido"})
-                            return sendResponse(resp)
-                    else:
-                        resp = jsonify({"status":'error', "msj":"Debe ingresar un nombre"})
-                        return sendResponse(resp)
-                else:
-                    resp = jsonify({"status":'error', "msj":"Debe ingresar un correo"})
-                    return  sendResponse(response)
-            else:
+        if  request.method == 'POST':   
+            if not _strcorreo: 
+                resp = jsonify({"status":'error', "msj":"Debe ingresar un correo"})
+                return  sendResponse(resp)  
+            if not re.match('^[(a-z0-9\_\-\.)]+@[(a-z0-9\_\-\.)]+\.[(a-z)]{2,15}$',_strcorreo.lower()):
+                resp = jsonify({"status":'error', "msj":"Debe ingresar un correo válido"})
+                return  sendResponse(resp)  
+            if not _strcontrasena:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar una contraseña"})
+                return sendResponse(resp)           
+            if not _strnombres:        
+                resp = jsonify({"status":'error', "msj":"Debe ingresar un apellido"})
                 return sendResponse(resp)
+            if not _strapellidos:        
+                resp = jsonify({"status":'error', "msj":"Debe ingresar un nombre"})
+                return sendResponse(resp)   
+            if not _id_rol:
+                resp = jsonify({"status":'error', "msj":"Debe ingresar un rol"})
+                return sendResponse(resp)                            
+            _hashed_password = hashlib.md5(_strcontrasena.encode())
+            #existe_user=user_validate(_strusuario)
+            #if not existe_user:                                
+            existe_email=email_validate(_strcorreo)
+            if not existe_email:
+                # save edits
+                sql = "INSERT INTO dt_usuarios(strcorreo, strcontrasena, id_rol, strnombres, strapellidos, token) VALUES(%s, %s, %s, %s, %s, %s)"
+                data = (_strcorreo, _hashed_password.hexdigest(),_id_rol,_strnombres, _strapellidos, _token)
+                nombapell= _strnombres + " " + _strapellidos
+                conn = mysql.connect()
+                cursor = conn.cursor()
+                cursor.execute(sql, data)
+                conn.commit()
+                resp = jsonify({"status":'success', "msj":"El usuario fue registrado","token":_token})                                    
+                resp.status_code = 200                                    
+                send_mail(_token,_strcorreo,nombapell)
+                return sendResponse(resp)
+            else:
+                resp = jsonify({"status":'error', "msj":"El usuario ya se encuentra registrado"})
+                return  sendResponse(resp)                                                         
         else:
             resp = jsonify({"status":'error', "msj":"Debe ingresar un usuario"})
-            return sendResponse(response)
+            return sendResponse(resp)
     except Exception as e:
         print(e)
 
@@ -146,13 +146,13 @@ def userLogin():
 def updateUser():
     try:
         _json = request.json
-        _id = _json['id']
+        _id = _json['id_usuario']
         _strcorreo = _json['stremail']
         _strusuario = _json['struser']
         _strcontrasena = _json['strpassword']
         _strnombres = _json['strname']
         _strapellidos = _json['strsurname']
-        _bt_estatus_id = _json['bt_estatus_id']
+        _bt_estatus_id = _json['id_status']
         # validate the received values
         if _strcorreo and _strcontrasena and _id and request.method == 'POST':
             # do not save password as a plain text
@@ -211,7 +211,7 @@ def email_validate(strcorreo):
         _strcorreo=strcorreo
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        sql="SELECT * FROM dt_usuarios WHERE strcorreo_electronico=%s"
+        sql="SELECT * FROM dt_usuarios WHERE strcorreo=%s"
         cursor.execute(sql,_strcorreo)
         row = cursor.fetchone()
         return row

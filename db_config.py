@@ -19,3 +19,4 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_DEFAULT_SENDER']  =  'no-reply@ubiipagos.com' #user that will go email)
 mail = Mail(app)
+app.config['UPLOAD_FOLDER']='./modules/documents_company/'
