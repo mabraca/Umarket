@@ -31,18 +31,10 @@ def send_mailCompany(email,company):
     mail.send(msg_object)
     return "Sent"
 
+
 def sendResponse(response):
-    #resp=json.dumps(response)
-   # print(resp)
-    """if resp.status=='error':
-        response.status_code=204
-    if resp.status=='warning':
-        response.status_code=202 
-    if resp.status=='success':
-        response.status_code=200"""
-        
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'application/json')
+    response.headers.add('Content-Type', 'multipart/form-data')
     return response
 
 @app.errorhandler(404)
@@ -53,7 +45,6 @@ def not_found(error=None):
     }
     resp = jsonify(message)
     resp.status_code = 404
-
     return resp
 
 if __name__ == "__main__":

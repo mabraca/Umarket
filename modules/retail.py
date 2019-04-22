@@ -4,12 +4,14 @@ import db_config
 from . import modules
 import os,time
 from werkzeug.utils import secure_filename
+#from werkzeug.datastructures import ImmutableMultiDict
+
 
 @modules.route('/bussiness/register', methods=['POST'])
 def registerBussines():
     try:
         retail= Company()        
-        _json= request.get_json(force=True) 
+        """_json= request.get_json(force=True) 
         print(_json)                   
         retail.strnombre_empresa=_json['strname_company']
         retail.strrif_empresa=_json['strrif_company']
@@ -17,22 +19,30 @@ def registerBussines():
         retail.strdireccion = _json['straddress']        
         retail.strcorreo=_json['stremail']
         retail.strtelefono=_json['strphone']
-        retail.id_tipo=_json['id_type']
-
-        if not request.files:
-            resp = jsonify({"status":'error', "msj":"Debe adjuntar los archivos"})
-            #resp.status_code=204
+        retail.id_tipo=_json['id_type']"""
+        
+        print(request.files.getlist("file[]"))
+        fileRegistroMercantil= request.files.get('filemerchant_register')
+        fileRif= request.files.get('filerif')
+        fileCi= request.files.get('fileci')
+        fileReciboServicio= request.files.get('filereceipt_services')
+        
+        print("paso")
+        print(request.files)
+        #print(fileRegistroMercantil.filename)
+        if not  fileRegistroMercantil:
+            resp = jsonify({"status":'error', "msj":"Debe adjuntar el registro mercantil"})            
             return sendResponse(resp)
+        print(" ")
+        print(fileRegistroMercantil)
+        #resp = jsonify({"status":'success', "msj":"OK ->"+fileRegistroMercantil.filename})            
+        # return sendResponse(resp)
 
-        fileRegistroMercantil= request.files['filemerchant_register']
-        fileRif= request.files['filerif']
-        fileCi= request.files['fileci']
-        fileReciboServicio= request.files['filereceipt_services']
-        #retail.strcodigo_postal = _json['strpostal_code']
-        #retail.strhorario_empresa= _json['strschedule_company']     
-        #retail.id_estado=_json['id_estado']  
-        #retail.id_ciudad=_json['id_ciudad']            
-        #retail.id_municipio= _json['id_municipio']   
+        if  fileRegistroMercantil:      
+            if not fileRegistroMercantil.filename.split('.')[1]=='pdf':
+                resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
+                return sendResponse(resp)   
+        
         folder_documents=time.strftime("%Y%m%d")
         ruta=app.config['UPLOAD_FOLDER']+folder_documents
         #print(ruta)
@@ -40,14 +50,14 @@ def registerBussines():
             os.makedirs(app.config['UPLOAD_FOLDER']+folder_documents)
             path_folder_documents=app.config['UPLOAD_FOLDER']+folder_documents
         else: 
-            print("existe ")
+            print("existe 02/05/19")
         
         #print(time.strftime("%Y%m%d"))
         #print(os.path.exists(time.strftime("%Y%m%d")))
 
         # validate the received values
         if request.method == 'POST':           
-            if not retail.strnombre_empresa:             
+            """if not retail.strnombre_empresa:             
                 resp = jsonify({"status":'error', "msj":"Debe ingresar un nombre para la empresa"})
                 return sendResponse(resp)
 
@@ -73,43 +83,35 @@ def registerBussines():
             
             if not retail.id_tipo:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
-                return sendResponse(resp)
+                return sendResponse(resp)"""
             
-            if  os.path.isfile(fileRegistro_mercantil):
-                if not os.path.splitext(fileRegistro_mercantil)=='.pdf':
-                    resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
+            if  fileRegistroMercantil:            
+                if not fileRegistroMercantil.filename.split('.')=='pdf':
+                    resp = jsonify({"status":'error', "msj":"El registro mercantil de estar en formato .pdf"})
                     return sendResponse(resp) 
             else:
                 resp = jsonify({"status":'error', "msj":"Debe adjuntar el Registro Mercantil"})
                 return sendResponse(resp)
             
-            if  os.path.isfile(fileRifs):
-                if not os.path.splitext(fileRegistro_mercantil)=='.pdf':
-                    resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
+            if  fileRifs:
+                if not fileRifs.filename.split('.')=='pdf':
+                    resp = jsonify({"status":'error', "msj":"El R.I.F debe estar en formato .pdf"})
                     return sendResponse(resp) 
             else:
                 resp = jsonify({"status":'error', "msj":"Debe adjuntar el R.I.F"})
                 return sendResponse(resp)
             
-            if  os.path.isfile(fileRif):
-                if not os.path.splitext(fileRegistro_mercantil)=='.pdf':
-                    resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
-                    return sendResponse(resp) 
-            else:
-                resp = jsonify({"status":'error', "msj":"Debe adjuntar el R.I.F"})
-                return sendResponse(resp)
-            
-            if  os.path.isfile(fileCi):
-                if not os.path.splitext(fileCi)=='.pdf':
-                    resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
+            if  fileCi:
+                if not fileCi.filename.slipt('.')=='pdf':
+                    resp = jsonify({"status":'error', "msj":"La Cédula de Identidad debe estar en formato .pdf"})
                     return sendResponse(resp) 
             else:
                 resp = jsonify({"status":'error', "msj":"Debe adjuntar la Cédula de Identidad"})
                 return sendResponse(resp)
 
-            if  os.path.isfile(fileReciboServicio):
-                if not os.path.splitext(fileCi)=='.pdf':
-                    resp = jsonify({"status":'error', "msj":"Debe adjuntar un archivo en formato .pdf"})
+            if  fileReciboServicio:
+                if not fileReciboServicio.filename.split('.')=='pdf':
+                    resp = jsonify({"status":'error', "msj":"El Reccibo de servicios debe estar en formato .pdf"})
                     return sendResponse(resp) 
             else:
                 resp = jsonify({"status":'error', "msj":"Debe adjuntar el Recibo de Servicios"})
@@ -163,6 +165,9 @@ def registerBussines():
                 else:
                     resp = jsonify({"status":'error', "msj":"El negocio no fue registrado"})                    
                     return sendResponse(resp)
+        else:
+            resp = jsonify({"status":'error', "msj":"Debe enviar datos prueba"})                    
+            return sendResponse(resp)
 
 
     except Exception as e:
