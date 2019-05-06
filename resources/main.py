@@ -50,5 +50,33 @@ class Main():
     
 
     #Este metodo permite obtener de la tabla que desee retornando el o los campos enviados como parametros en la función
-    def get_info():
+    def get_info(tabla, campos, condicion, debug = false):
+        try:
+            if not tabla:   
+                if len(campos)>0:
+                    temp=""
+                    sw=True
+                    for campos in nombres
+                        if sw:
+                            temp+=nombres
+                            sw = False
+                        else:
+                            temp += "," +nombres
+                else:
+                    temp = campos
+                
+                if len(condicion)>0:
+                    if not condicion.find('where')==0 or not condicion.find('WHERE')==0:
+                        condicion=' WHERE '+ condicion
+                
+                sql=" SELECT %s FROM %s %s "%(campos, tabla, condicion)
 
+
+
+        except Exception as e:
+            print(e)
+        finally:
+            pass
+
+        
+     

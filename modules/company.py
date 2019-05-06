@@ -49,7 +49,7 @@ class Company():
             resource=cursor.lastrowid
             print(resource)
             conn.commit()
-            return resource
+            return int(resource)
         except Exception as e:
             print(e)
         finally:
@@ -76,7 +76,7 @@ class Company():
             #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM dt_empresa WHERE UPPER(strcorreo)=UPPER(%s)"           
+            sql="SELECT * FROM dt_empresa WHERE UPPER(strcorreo)=UPPER(%s)"          
             cursor.execute(sql,strcorreo)
             row = cursor.fetchall()
             return row
