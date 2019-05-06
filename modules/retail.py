@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 @modules.route('/bussiness/register', methods=['POST'])
 def registerBussines():
     try:
-        retail= Company()        
+        retail= Company()     
+        print("entro")   
         """_json= request.get_json(force=True) 
         print(_json)                   
         retail.strnombre_empresa=_json['strname_company']
@@ -35,7 +36,9 @@ def registerBussines():
         if not os.path.exists(ruta):                 
             os.makedirs(app.config['UPLOAD_FOLDER']+folder_documents)
             path_folder_documents=app.config['UPLOAD_FOLDER']+folder_documents
+
         else: 
+            path_folder_documents=ruta
             print("existe 02/05/19")
         
 
@@ -119,34 +122,41 @@ def registerBussines():
                 #comercio=retail.registerCompany()
                # print(comercio)
                 comercio=1
-                if comercio:                    
+                if comercio:    
+                    print("paso en comercio")                
                     #retail.id_empresa=comercio['id_empresa']
                     retail.id_empresa=1
-                    ruta_comercio=path_folder_documents+"-"+folder_documents+retail.id_empresa
+                    print("path_folder_documents->"+path_folder_documents)
+                    print("folder_documents"+folder_documents)
+                    ruta_comercio=path_folder_documents+"/"+folder_documents+"-"+str(retail.id_empresa)
+                    print("ruta comercio"+ruta_comercio)
                     if not os.path.exists(ruta_comercio):
-                        os.makedirs(ruta_comercio)
+                        print("crear carpeta")
+                        os.makedirs(ruta_comercio)                    
                     else:
-                        print("existe")
+                        print("existe carpeta")
+                    
                     print(ruta_comercio)
+                    print("ruta_comercio")
 
-                    filename_regmercantil="RM_"+secure_filename(fileRegistro_mercantil.filename)+retail.id_empresa
+                    filename_regmercantil="RM_"+str(retail.id_empresa)+"."+secure_filename(fileRegistroMercantil.filename.split('.')[1])
                     fileRegistroMercantil.save(os.path.join(ruta_comercio,filename_regmercantil))          
-
+                    print(filename_regmercantil)
                     #documentosRM=retail.registerDocumentsCompany(ruta_comercio+filename_regmercantil,retail.id_empresa,3)
 
-                    filename_rif="RIF"+secure_filename(fileRif.filename)+retail.id_empresa
+                    filename_rif="RIF_"+str(retail.id_empresa)+"."+secure_filename(fileRif.filename.split('.')[1])
                     fileRif.save(os.path.join(ruta_comercio,filename_rif))
+                    print(filename_rif)
+                    #documentosRIF=retail.registerDocumentsCompany(ruta_comercio+filename_rif,retail.id_empresa,4)
 
-                    documentosRIF=retail.registerDocumentsCompany(ruta_comercio+filename_rif,retail.id_empresa,4)
-
-                    filename_ci="CI"+secure_filename(fileCi)+retail.id_empresa
+                    filename_ci="CI_"+str(retail.id_empresa)+"."+secure_filename(fileCi.filename.split('.')[1])
                     fileCi.save(os.path.join(ruta_comercio,filename_ci))
+                    print(filename_ci)
+                    #documentosCI=retail.registerDocumentsCompany(ruta_comercio+filename_ci,retail.id_empresa,5)
 
-                    documentosCI=retail.registerDocumentsCompany(ruta_comercio+filename_ci,retail.id_empresa,5)
-
-                    filename_rs= "RS"+secure_filename(fileReciboServicio)+retail.id_empresa
-                    fileReciboServicio.save(os.path._join(ruta_comercio,filename_rs))
-
+                    filename_rs= "RS_"+str(retail.id_empresa)+"."+secure_filename(fileReciboServicio.filename.split('.')[1])
+                    fileReciboServicio.save(os.path.join(ruta_comercio,filename_rs))
+                    print(filename_rs+"recibo servicios")
                     #documentosRS=retail.registerDocumentsCompany(ruta_comercio+filename_rs,retail.id_empresa,6)
                     if not filename_rs:
                     #if documentosRM and documentosRIF and documentosCI and documentosRS:"""
@@ -154,7 +164,7 @@ def registerBussines():
                         return sendResponse(resp)
                     else:
                         resp = jsonify({"status":'success', "msj":"El negocio fue registrado"})
-                        send_mailCompany(retail.strcorreo,retail.strnombre_empresa)
+                        #send_mailCompany(retail.strcorreo,retail.strnombre_empresa)
                         return sendResponse(resp)
                 else:
                     resp = jsonify({"status":'error', "msj":"El negocio no fue registrado"})                    
