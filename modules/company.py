@@ -56,14 +56,16 @@ class Company():
             cursor.close()
             conn.close()
 
-    def existeCompany(self,strrif_empresa):
+    def existeCompany(self):
         try:   
             #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM dt_empresa WHERE UPPER(strrif_empresa)=UPPER(%s)"           
-            cursor.execute(sql,strrif_empresa)
+            sql="SELECT * FROM dt_empresa WHERE ltrim(rtrim(UPPER(strrif_empresa)))=ltrim(rtrim(UPPER(%s)))"       
+            print(sql)    
+            cursor.execute(sql,self.strrif_empresa)
             row = cursor.fetchall()
+            print(row)
             return row
         except Exception as e:
             print(e)
@@ -79,6 +81,7 @@ class Company():
             sql="SELECT * FROM dt_empresa WHERE UPPER(strcorreo)=UPPER(%s)"          
             cursor.execute(sql,strcorreo)
             row = cursor.fetchall()
+            print(row)
             return row
         except Exception as e:
             print(e)
@@ -86,7 +89,7 @@ class Company():
             cursor.close()
             conn.close()
     
-    def registerDocumentsCompany(strulr,id_empresa,id_tipo):
+    def registerDocumentsCompany(self,strulr,id_empresa,id_tipo):
         try:
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)

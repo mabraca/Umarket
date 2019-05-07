@@ -2,18 +2,15 @@ from main import *
 from . import modules
 import re
 
-@modules.route('/register', methods=['POST'])
+@modules.route('/user/register', methods=['POST'])
 def addUser():
     try:
         _json= request.get_json(force=True)
         _strcorreo = _json['stremail']
-        #   _strusuario = _json['struser']
         _id_rol=_json['id_rol']
         _strcontrasena = _json['strpassword']
         _strnombres = _json['strname']
         _strapellidos = _json['strsurname']
-        #Por defecto se registra con el id_estatus
-
         caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
         longitud = 8  # La longitud que queremos
         _token = ''.join(random.choice(caracteres) for _ in range(longitud))
@@ -39,6 +36,7 @@ def addUser():
                 resp = jsonify({"status":'error', "msj":"Debe ingresar un rol"})
                 return sendResponse(resp)                            
             _hashed_password = hashlib.md5(_strcontrasena.encode())
+            print(_hashed_password)
             #existe_user=user_validate(_strusuario)
             #if not existe_user:                                
             existe_email=email_validate(_strcorreo)
@@ -109,26 +107,26 @@ def userLogin():
     try:             
         _json= request.get_json(force=True)
        # print(_json)
-        _strusuario = _json['struser']
+        _strcorreo = _json['stremail']
         _strcontrasena = _json['strpassword']
-        if _strusuario and  request.method == 'POST':
+        if _strcorreo and  request.method == 'POST':
             if _strcontrasena:
-                existe_user=user_validate(_strusuario)  
+                existe_user=user_validate(_strcorreo)  
                 _hashed_password = hashlib.md5(_strcontrasena.encode())
                 if existe_user:
-                    if existe_user['tb_estatus_id']==2:
+                    if existe_user['id_status']==2:
                         if (existe_user['strcontrasena']==_hashed_password.hexdigest()):
                             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
                             longitud = 32  # La longitud que queremos
                             _token = ''.join(random.choice(caracteres) for _ in range(longitud))
-                            resp = jsonify({"status":"success", "msj":"El usuario logeado","strusuario":existe_user['strusuario'], "strnombres":existe_user['strnombres'], "strapellidos":existe_user['strapellidos'],"strcorreo":existe_user['strcorreo_electronico'],"token":_token})                                                      
+                            resp = jsonify({"status":"success", "msj":"El usuario logeado","stremail":existe_user['strcorreo'], "strname":existe_user['strnombres'], "strsurname":existe_user['strapellidos'],"token":_token})                                                      
                             resp.status_code = 200
                             return sendResponse(resp)
                         else:
                             resp = jsonify({"status":'warning', "msj":"La contraseña es inválida"})
                             return sendResponse(resp)                       
                     else:
-                        resp = jsonify({"status": 'warning', "msj": "El usuario inactivo"})
+                        resp = jsonify({"status": 'warning', "msj": "El usuario esta inactivo"})
                         return sendResponse(resp)
                 else:
                     resp = jsonify({"status": 'error', "msj": "El usuario no existe"})
@@ -192,12 +190,12 @@ def deleteUser():
         conn.close()
 
 #Funcion que valida si el usuario existe
-def user_validate(strusuario):
+def user_validate(strcorreo):
     try:
-        _strusuario=strusuario
+        print(strcorreo)
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute("SELECT * FROM dt_usuarios WHERE strusuario=%s",_strusuario)
+        cursor.execute("SELECT * FROM dt_usuarios WHERE strcorreo=%s",strcorreo)
         row = cursor.fetchone()
         return row
     except Exception as e:
@@ -229,14 +227,14 @@ def token():
         if _token and  request.method == 'POST':
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT id,token,tb_estatus_id FROM dt_usuarios WHERE token=%s"
+            sql="SELECT id_usuario,token,id_status,id_rol FROM dt_usuarios WHERE token=%s"
             cursor.execute(sql,_token)
             row = cursor.fetchone()
             if row:
-                if row['tb_estatus_id']==1:
+                if row['id_status']==1:
                     token=activate_user(_token)       
                     if token:
-                        resp = jsonify({"status": 'success', "msj": "El token fue activado"})
+                        resp = jsonify({"status": 'success', "msj": "El token fue activado","id_rol":row['id_rol']})
                         return sendResponse(resp)
                     else:
                         resp = jsonify({"status": 'error', "msj": "El token no fue activado"})
@@ -257,14 +255,12 @@ def token():
         cursor.close()
         conn.close()
 
-#Funcion que activa el usuario
-def activate_user(token):
+@modules.route('/logout',methods=['GET'])
+
+#Funcion de logout
+def logout(token):
     try:
-        _token=token
-        conn = mysql.connect()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
-        afectado=cursor.execute("UPDATE dt_usuarios SET tb_estatus_id=2 WHERE token=%s",_token)
-        conn.commit()
+       
         return afectado
     except Exception as e:
         print(e)
