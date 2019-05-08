@@ -75,7 +75,7 @@ class Company():
     
     def existeEmail(self,strcorreo):
         try:   
-            #print(strrif_empresa)                 
+            print(strcorreo)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
             sql="SELECT * FROM dt_empresa WHERE UPPER(strcorreo)=UPPER(%s)"          
@@ -102,7 +102,54 @@ class Company():
                     
         except Exception as e:
             print(e)
-        
-
-
+    
+    def validateCompany(self,   id_empresa,id_tipo_empresa):
+        try:
+            conn=mysql.connect()
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            sql="UPDATE dt_empresa SET id_status=4 WHERE id_empresa=%s AND id_tipo=%s"
+            data=(id_empresa,id_tipo_empresa)
+            afectado=cursor.execute(sql,data)
+            conn.commit()
+            print(afectado)
+            return afectado
+        except Exception as e:
+            print(e)
+        finally:
+            pass
+    
+    def generateAccessCode(self,id_empresa,id_tipo_empresa):
+        try:
+            caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
+            longitud = 8  # La longitud que queremos
+            codigo_acceso = ''.join(random.choice(caracteres) for _ in range(longitud))
+            print("codigo->"+codigo_acceso)
+            conn=mysql.connect()
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            sql="UPDATE dt_empresa SET strcodigo_acceso=%s WHERE id_empresa=%s AND id_tipo=%s"
+            data=(codigo_acceso,id_empresa,id_tipo_empresa)
+            afectado=cursor.execute(sql,data)
+            conn.commit()
+            return codigo_acceso
+        except expression as identifier:
+            pass
+        finally:
+            pass
+                
+    def companyView(self,id_empresa):
+        try:   
+            #print(strrif_empresa)                 
+            conn = mysql.connect()
+            cursor = conn.cursor(pymysql.cursors.DictCursor)
+            sql="SELECT * FROM dt_empresa WHERE id_empresa=%s"       
+            print(sql)    
+            cursor.execute(sql,id_empresa)
+            row = cursor.fetchone()
+            print(row)
+            return row
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+            conn.close()
     

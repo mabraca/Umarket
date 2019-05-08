@@ -1,7 +1,7 @@
 import socket, json
 from db_config import mysql, app, mail
 from flaskext.mysql import MySQL, pymysql
-from flask import flash, request,make_response, current_app, Blueprint, jsonify, Response
+from flask import flash, request,make_response, current_app, Blueprint, jsonify, Response, session 
 from werkzeug import generate_password_hash, check_password_hash
 import hashlib
 from flask_mail import Mail, Message
@@ -12,12 +12,12 @@ import db_config, string,random
 app.register_blueprint(modules)
 
 
-def send_mail(token,email,nombapell):
+def send_mail(token,email,nombapell,url_activacion):
     """Envio ."""
     #msj = "Activacion de usuario"
     recipients = [email]
-    msg_object = Message("Activacion de usuario UbiiMarket", recipients)
-    msg_object.body = "Activacion de usuario "+nombapell+", Código: "+ token
+    msg_object = Message("Activación de usuario UbiiMarket", recipients)
+    msg_object.body = "Activación de usuario "+nombapell+", Código: "+ token +". Por favor acceder a esta url para activar: "+url_activacion
     mail.send(msg_object)
     return "Sent"
 
@@ -28,6 +28,15 @@ def send_mailCompany(email,company):
     recipients = [email]
     msg_object = Message("Registro de Pre-Afiliación UbiiMarket", recipients)
     msg_object.body = "Usted realizó el registro de Pre-Afiliación "+company
+    mail.send(msg_object)
+    return "Sent"
+
+def send_mailCompanyCode(email,company,access_code):
+    """Envio ."""
+    #msj = "Activacion de usuario"
+    recipients = [email]
+    msg_object = Message("Registro de Afiliación UbiiMarket", recipients)
+    msg_object.body = "Usted "+company+" esta afiliado en UbiiMarket y su código de acceso es: "+access_code
     mail.send(msg_object)
     return "Sent"
 

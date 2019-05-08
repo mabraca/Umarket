@@ -6,11 +6,13 @@ import re
 def addUser():
     try:
         _json= request.get_json(force=True)
+        print(_json)
         _strcorreo = _json['stremail']
         _id_rol=_json['id_rol']
         _strcontrasena = _json['strpassword']
         _strnombres = _json['strname']
         _strapellidos = _json['strsurname']
+        _url_activacion=_json['url_activated']
         caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
         longitud = 8  # La longitud que queremos
         _token = ''.join(random.choice(caracteres) for _ in range(longitud))
@@ -51,7 +53,7 @@ def addUser():
                 conn.commit()
                 resp = jsonify({"status":'success', "msj":"El usuario fue registrado","token":_token})                                    
                 resp.status_code = 200                                    
-                send_mail(_token,_strcorreo,nombapell)
+                send_mail(_token,_strcorreo,nombapell,_url_activacion)
                 return sendResponse(resp)
             else:
                 resp = jsonify({"status":'error', "msj":"El usuario ya se encuentra registrado"})
@@ -119,7 +121,7 @@ def userLogin():
                             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
                             longitud = 32  # La longitud que queremos
                             _token = ''.join(random.choice(caracteres) for _ in range(longitud))
-                            resp = jsonify({"status":"success", "msj":"El usuario logeado","stremail":existe_user['strcorreo'], "strname":existe_user['strnombres'], "strsurname":existe_user['strapellidos'],"token":_token})                                                      
+                            resp = jsonify({"status":"success", "msj":"El usuario logeado","stremail":existe_user['strcorreo'], "strname":existe_user['strnombres'], "strsurname":existe_user['strapellidos'],"token":_token,"id_rol":existe_user['id_rol']})                                                      
                             resp.status_code = 200
                             return sendResponse(resp)
                         else:
@@ -221,9 +223,10 @@ def email_validate(strcorreo):
 
 @modules.route('/token',methods=['POST'])
 def token():
-    try:        
+    try:                
         _json= request.get_json(force=True)
         _token= _json['token']
+        print(_token)
         if _token and  request.method == 'POST':
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -255,9 +258,23 @@ def token():
         cursor.close()
         conn.close()
 
-@modules.route('/logout',methods=['GET'])
+#Funcion que activa el usuario
+def activate_user(token):
+    try:
+        _token=token
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        afectado=cursor.execute("UPDATE dt_usuarios SET id_status=2 WHERE token=%s",_token)
+        conn.commit()
+        return afectado
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
 
 #Funcion de logout
+@modules.route('/logout',methods=['GET'])
 def logout(token):
     try:
        
