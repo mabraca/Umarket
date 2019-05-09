@@ -16,6 +16,8 @@ class Company():
     strdireccion=None
     strcorreo=None
     strtelefono=None
+    blnafiliacion=None
+    id_status=None
     #strcodigo_postal=None
     #strhorario_empresa=None
     #id_estado=None
@@ -39,10 +41,14 @@ class Company():
 
 
     def registerCompany(self):
-        try:                                                                                                          
+        try: 
+            if self.blnafiliacion==True:
+                self.id_status=4
+            else:
+                self.id_status=3
             # save edits
-            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo) VALUES(%s, %s, %s, %s, %s, %s, %s)"
-            data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo)
+            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo,id_status) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
+            data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo,self.id_status)
             conn = mysql.connect()
             cursor = conn.cursor()
             cursor.execute(sql, data)
@@ -147,6 +153,32 @@ class Company():
             row = cursor.fetchone()
             print(row)
             return row
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+            conn.close()
+    
+    def deleteCompany(self):
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM dt_empresa WHERE id_empresa=%s", (self.id_empresa))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(e)
+        finally:
+            cursor.close()
+            conn.close()
+    
+    def deleteDocuments(self):
+        try:
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM dt_documentos_empresa WHERE id_empresa=%s", (self.id_empresa))
+            conn.commit()
+            return True
         except Exception as e:
             print(e)
         finally:

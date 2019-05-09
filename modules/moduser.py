@@ -273,12 +273,44 @@ def activate_user(token):
         cursor.close()
         conn.close()
 
+def activate_userRetail(id_empresa):
+    try:    
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        afectado=cursor.execute("UPDATE dt_usuarios SET id_status=2 WHERE id_empresa=%s",id_empresa)
+        conn.commit()
+        print(afectado)
+        return afectado
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
 #Funcion de logout
 @modules.route('/logout',methods=['GET'])
 def logout(token):
     try:
        
         return afectado
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def addUserRetail(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
+    try:
+        _hashed_password = hashlib.md5(strcontrasena.encode())
+        sql = "INSERT INTO dt_usuarios(strusuario,strcorreo, strcontrasena, id_rol, strnombres, id_empresa) VALUES(%s, %s, %s,%s,%s, %s)"
+        data = (strusuario, strcorreo, _hashed_password.hexdigest(), 2, strnombres,id_empresa)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql, data)
+        resource=cursor.lastrowid
+        conn.commit()
+        return  resource       
     except Exception as e:
         print(e)
     finally:

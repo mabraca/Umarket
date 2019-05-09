@@ -4,6 +4,8 @@ import db_config
 from . import modules
 import os,time
 from werkzeug.utils import secure_filename
+from .moduser import *
+
 
 @modules.route('/bussiness/register', methods=['POST'])
 def registerBussines():
@@ -21,9 +23,17 @@ def registerBussines():
         retail.strrif_empresa=str(_json['strrif_company'])
         retail.strnombre_representante=str(_json['strlegal_representative'])
         retail.strdireccion =str(_json['straddress'])
+        strusuario=str(_json['struser'])
         retail.strcorreo=str(_json['stremail'])
         retail.strtelefono=str(_json['strphone'])
         retail.id_tipo=_json['id_type']
+
+        if not _json['id_type']==2:
+            resp = jsonify({"status":'error', "msj":"El tipo de empresa debe ser Comercio"})
+            return sendResponse(resp)
+        strcontrasena=_json['strpassword']
+        strverifcontrasena=_json['verifpassword']
+
         print("antes de validar")
         # validate the received values
         if request.method == 'POST':     
@@ -38,7 +48,6 @@ def registerBussines():
             if not(len(retail.strrif_empresa)==11):
                 resp = jsonify({"status":'error', "msj":"Debe ingresar un R.I.F válido"})
                 return sendResponse(resp)
-
             
             if not retail.strnombre_representante:
                 resp = jsonify({"status":"error","msj":"Debe ingresar el nombre del representante legal"})
@@ -61,6 +70,10 @@ def registerBussines():
                 return sendResponse(resp)
             print("antes de validar company")
             
+            if not strcontrasena==strverifcontrasena:
+                resp = jsonify({"status":'error', "msj":"Las contraseñas no coinciden"})
+                return sendResponse(resp)
+
             print(retail.strrif_empresa)                    
             existe_company=retail.existeCompany() 
             existe_email=retail.existeEmail(retail.strcorreo)
@@ -77,13 +90,8 @@ def registerBussines():
                 if comercio:     
                     print("registro")                                
                     retail.id_empresa=comercio
-
-                    #resp = jsonify({"status":'success', "msj":"El negocio fue registrado con éxito","id_empresa":retail.id_empresa})
-                    #return sendResponse(resp)
                     print("files abajo")
-                    send_mailCompany(retail.strcorreo,retail.strnombre_empresa)  
-                    #print(resp)                
-                    #return sendResponse(resp)  
+                    
                     print(request.files)  
                     if request.files:
                         print("request.files")
@@ -140,8 +148,10 @@ def registerBussines():
                         else:
                             print("existe carpeta")               
                     else:
-                        resp = jsonify({"status":'error', "msj":"Debe adjuntar los archivos del comercio"})                    
-                        return sendResponse(resp)
+                        retailDel=retail.deleteCompany()
+                        if retailDel:
+                            resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
+                            return sendResponse(resp)
 
                     #Guardado de los archivos en el servidor y el registro de la ruta en base de datos
                     filename_regmercantil="RM_"+str(retail.id_empresa)+"."+secure_filename(fileRegistroMercantil.filename)
@@ -170,18 +180,30 @@ def registerBussines():
                     documentosRS=retail.registerDocumentsCompany(urlArchivoRs,retail.id_empresa,6)    
 
                     if documentosRM and documentosRIF and documentosCI and documentosRS:
-                        resp = jsonify({"status":'success', "msj":"El comercio fue registrado con éxito"})
-                        return sendResponse(resp)                                        
+                        adduser_retail=addUserRetail(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
+                        if adduser_retail:
+                            send_mailCompany(retail.strcorreo,retail.strnombre_empresa)  
+                            resp = jsonify({"status":'success', "msj":"El comercio fue registrado con éxito"})
+                            return sendResponse(resp) 
+                        else:
+                            retailDelDoc=retail.deleteDocuments()
+                            if retailDelDoc:
+                                retailDel=retail.deleteCompany()
+                                if retailDel:
+                                    resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
+                                    return sendResponse(resp)                                   
                     else:
+
                         resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
                         return sendResponse(resp)
+                else:
+                    resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
+                    return sendResponse(resp)
         else:
             resp = jsonify({"status":'error', "msj":"Debe enviar datos"})                    
             return sendResponse(resp)
     except Exception as e:
         print(e)    
-
-
 
 @modules.route('/bussiness/preaffiliated', methods=['GET'])
 def retailPreaffiliated():
@@ -202,3 +224,69 @@ def retailPreaffiliated():
     finally:
         cursor.close()
         conn.close()
+
+@modules.route('/bussiness/list', methods=['GET'])
+def retailList():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM  vw_company WHERE id_tipo_empresa=2 ORDER BY id_empresa, dtmfecha_creacion ")
+        row = cursor.fetchall()
+        if row:
+            resp = jsonify(row)            
+            resp.status_code = 200
+            return sendResponse(resp)
+        elif not row:
+            resp = jsonify({"status":'warning', "msj":"No se encuentran comercios"})
+            return sendResponse(resp)    
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@modules.route('/bussiness/validated', methods=['POST'])
+def retailValidated():
+    try:
+        if request.method == 'POST':   
+            retail= Company() #Instancia  
+            print("paso instancia")   
+            _json= request.get_json(force=True)
+            _id_empresa=_json['id_empresa']            
+            if not _id_empresa:
+                resp = jsonify({"status":'error', "msj":"De seleccionar un Comercio"})
+                return sendResponse(resp)  
+            existe_retail=retail.companyView(_id_empresa) 
+            print("existe->"+str(existe_retail))
+            if existe_retail==None:
+                resp = jsonify({"status":'error', "msj":"El Comercio no existe"})
+                return sendResponse(resp)  
+            else:
+                _id_tipo_empresa=existe_retail['id_tipo']
+                if existe_retail['id_status']==3:
+                    if _id_tipo_empresa==2:
+                        print("entro en validar")
+                        validar=retail.validateCompany(_id_empresa,_id_tipo_empresa)
+                        activarUser=activate_userRetail(_id_empresa)                    
+                    else:
+                        resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Comercio"})
+                        return sendResponse(resp)  
+                else:
+                    resp = jsonify({"status":'error', "msj":"El comercio ya fue validado"})
+                    return sendResponse(resp)  
+
+            if validar:                
+                if activarUser:
+                    print("envio de correo  activacion")
+                    send_mailCompanyActivation(existe_retail['strcorreo'],existe_retail['strnombre_empresa'])
+                    resp = jsonify({"status":'success', "msj":"El comercio fue validado con éxito"})
+                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status":'error', "msj":"El comercio no pudo ser validado"})
+                return sendResponse(resp)          
+        else:
+            resp = jsonify({"status":'warning', "msj":"De seleccionar un Comercio   "})
+            return sendResponse(resp)   
+    except Exception as e:
+        print(e)
+

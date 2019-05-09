@@ -17,7 +17,7 @@ def send_mail(token,email,nombapell,url_activacion):
     #msj = "Activacion de usuario"
     recipients = [email]
     msg_object = Message("Activación de usuario UbiiMarket", recipients)
-    msg_object.body = "Activación de usuario "+nombapell+", Código: "+ token +". Por favor acceder a esta url para activar: "+url_activacion
+    msg_object.body = "Activación de usuario "+nombapell+", Código: "+ token +" por favor acceder a esta url para activar: "+url_activacion
     mail.send(msg_object)
     return "Sent"
 
@@ -40,6 +40,14 @@ def send_mailCompanyCode(email,company,access_code):
     mail.send(msg_object)
     return "Sent"
 
+def send_mailCompanyActivation(email,company):
+    """Envio ."""
+    #msj = "Activacion de usuario"
+    recipients = [email]
+    msg_object = Message("Registro de Afiliación UbiiMarket", recipients)
+    msg_object.body = "Usted "+company+" esta afiliado en UbiiMarket, ya puede acceder con su usuario y contraseña: "
+    mail.send(msg_object)
+    return "Sent"
 
 def sendResponse(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
