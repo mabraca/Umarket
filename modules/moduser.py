@@ -304,13 +304,28 @@ def addUserRetail(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
     try:
         _hashed_password = hashlib.md5(strcontrasena.encode())
         sql = "INSERT INTO dt_usuarios(strusuario,strcorreo, strcontrasena, id_rol, strnombres, id_empresa) VALUES(%s, %s, %s,%s,%s, %s)"
-        data = (strusuario, strcorreo, _hashed_password.hexdigest(), 2, strnombres,id_empresa)
+        data = (strusuario, strcorreo, _hashed_password.hexdigest(), 3, strnombres,id_empresa)
         conn = mysql.connect()
         cursor = conn.cursor()
         cursor.execute(sql, data)
         resource=cursor.lastrowid
         conn.commit()
         return  resource       
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def userBussiness_validate(strusuario):
+    try:
+        print(strusuario)
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM vw_business_user WHERE strusuario=%s",strusuario)
+        row = cursor.fetchone()
+        print(row)
+        return row
     except Exception as e:
         print(e)
     finally:

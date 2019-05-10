@@ -279,41 +279,66 @@ def manufacturerPreaffiliated():
         cursor.close()
         conn.close()
 
-@modules.route('/manufacturer/documents', methods=['GET'])
+@modules.route('/manufacturer/documents', methods=['POST'])
 def manufacturerDocuments():
     try:
-        pass
-    except expression as identifier:
-        pass
+        if request.method=='POST':
+            _json= request.get_json(force=True)
+            _id_empresa=_json['id_empresa']
+            if _id_empresa:
+                conn = mysql.connect()
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+                cursor.execute("SELECT * FROM  vw_documents_company WHERE id_empresa=%s",_id_empresa)
+                row = cursor.fetchall()
+                if row:
+                    resp = jsonify(row)            
+                    resp.status_code = 200
+                    return sendResponse(resp)
+                elif not row:
+                    resp = jsonify({"status":'warning', "msj":"El fabricante no posee documentos"})
+                    return sendResponse(resp)    
+            else:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un fabricante"})
+                return sendResponse(resp)  
+        else:
+            resp = jsonify({"status":'error', "msj":"Debe enviar datos"})
+            return sendResponse(resp)  
+    except Exception as e:
+        print(e)
     finally:
-        pass
-
+        if _id_empresa:
+            cursor.close()
+            conn.close()
 
 @modules.route('/manufacturer/access', methods=['POST'])
 def manufacturerAccess():
-    try:             
-        _json= request.get_json(force=True)
-       # print(_json)
-        _strcodigo_acceso = _json['straccess_code']
-        if _strcodigo_acceso and  request.method == 'POST':            
-                existe_manufacturer=validateCode(_strcodigo_acceso)
-                if existe_manufacturer:
-                    if existe_manufacturer['id_status']==4:                        
-                            caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
-                            longitud = 32  # La longitud que queremos
-                            _token = ''.join(random.choice(caracteres) for _ in range(longitud))
-                            resp = jsonify({"status":"success", "msj":"El fabricante logeado","stremail":existe_manufacturer['strcorreo'],"id_rol":existe_manufacturer['id_rol'],"token":_token})                                                      
-                            resp.status_code = 200
-                            return sendResponse(resp)                                      
+    try:        
+        if request.method== 'POST':
+            _json= request.get_json(force=True)
+            print(_json)
+            _strcodigo_acceso = _json['straccess_code']
+            if _strcodigo_acceso and  request.method == 'POST':            
+                    existe_manufacturer=validateCode(_strcodigo_acceso)
+                    if existe_manufacturer:
+                        if existe_manufacturer['id_status']==4:                        
+                                caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
+                                longitud = 32  # La longitud que queremos
+                                _token = ''.join(random.choice(caracteres) for _ in range(longitud))
+                                resp = jsonify({"status":"success", "msj":"El fabricante logeado","strnombre_empresa":existe_manufacturer['strnombre_empresa'],"strrif_empresa":existe_manufacturer['strrif_empresa'],"strnombre_representante":existe_manufacturer['strnombre_representante'],"stremail":existe_manufacturer['strcorreo'],"id_tipo_empresa":existe_manufacturer['id_tipo_empresa'],"token":_token})                                                      
+                                resp.status_code = 200
+                                return sendResponse(resp)                                      
+                        else:
+                            resp = jsonify({"status": 'warning', "msj": "El fabricante esta inactivo"})
+                            return sendResponse(resp)
                     else:
-                        resp = jsonify({"status": 'warning', "msj": "El fabricante esta inactivo"})
+                        resp = jsonify({"status": 'error', "msj": "El fabricante no existe"})
                         return sendResponse(resp)
-                else:
-                    resp = jsonify({"status": 'error', "msj": "El fabricante no existe"})
-                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status":"error", "msj": "Debe ingresar un código de acceso"})
+                return sendResponse(resp)
         else:
-            resp = jsonify({"status":"error", "msj": "Debe ingresar un código de acceso"})
-            return sendResponse(resp)    
+            resp = jsonify({"status":"error", "msj": "Acceso denegado"})
+            return sendResponse(resp)
     except Exception as e:
         print(e)
 
@@ -329,3 +354,14 @@ def validateCode(strcodigo_acceso):
     finally:
         cursor.close()
         conn.close()
+
+
+"""
+@modules.route('/manufacturer/documents/download', methods=['POST'])
+def manufacturerDocumentsSend():
+    try:
+        pass
+    except expression as identifier:
+        pass
+    finally:
+        pass"""

@@ -6,8 +6,7 @@ import os,time
 from werkzeug.utils import secure_filename
 from .moduser import *
 
-
-@modules.route('/bussiness/register', methods=['POST'])
+@modules.route('/business/register', methods=['POST'])
 def registerBussines():
     try:
         print("entro en /bussiness/register ")
@@ -205,7 +204,7 @@ def registerBussines():
     except Exception as e:
         print(e)    
 
-@modules.route('/bussiness/preaffiliated', methods=['GET'])
+@modules.route('/business/preaffiliated', methods=['GET'])
 def retailPreaffiliated():
     try:
         conn = mysql.connect()
@@ -225,7 +224,7 @@ def retailPreaffiliated():
         cursor.close()
         conn.close()
 
-@modules.route('/bussiness/list', methods=['GET'])
+@modules.route('/business/list', methods=['GET'])
 def retailList():
     try:
         conn = mysql.connect()
@@ -245,7 +244,7 @@ def retailList():
         cursor.close()
         conn.close()
 
-@modules.route('/bussiness/validated', methods=['POST'])
+@modules.route('/business/validated', methods=['POST'])
 def retailValidated():
     try:
         if request.method == 'POST':   
@@ -290,3 +289,74 @@ def retailValidated():
     except Exception as e:
         print(e)
 
+
+@modules.route('/business/login', methods=['POST'])
+def bussinessLogin():
+    try:             
+        _json= request.get_json(force=True)
+        print(_json)
+        _strusuario = _json['struser']
+        _strcontrasena = _json['strpassword']
+        if _strusuario and  request.method == 'POST':
+            if _strcontrasena:
+                existe_user=userBussiness_validate(_strusuario)
+                _hashed_password = hashlib.md5(_strcontrasena.encode())
+                if existe_user:
+                    print("existe user")
+                    print(existe_user)
+                    if existe_user['id_status_user']==2 and existe_user['id_empresa']:
+                        if (existe_user['strcontrasena']==_hashed_password.hexdigest()):
+                            caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
+                            longitud = 32  # La longitud que queremos
+                            _token = ''.join(random.choice(caracteres) for _ in range(longitud))
+                            resp = jsonify({"status":"success", "msj":"El usuario logeado","stremail":existe_user['strcorreo'], "strname":existe_user['strnombres'], "strsurname":existe_user['strapellidos'],"id_rol":existe_user['id_rol'],"id_empresa":existe_user['id_empresa'],"strnombre_empresa":existe_user['strnombre_empresa'], "id_tipo_empresa":existe_user['id_tipo_empresa'],"strrif_empresa":existe_user['strrif_empresa'],"strtelefono":existe_user['strtelefono'],"strdireccion":existe_user['strdireccion'],"token":_token})                                                      
+                            resp.status_code = 200
+                            return sendResponse(resp)
+                        else:
+                            resp = jsonify({"status":'warning', "msj":"La contraseña es inválida"})
+                            return sendResponse(resp)                       
+                    else:
+                        resp = jsonify({"status": 'warning', "msj": "El usuario esta inactivo"})
+                        return sendResponse(resp)
+                else:
+                    resp = jsonify({"status": 'error', "msj": "El usuario no existe"})
+                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status": 'error', "msj": "Debe ingresar una contraseña"})
+                return sendResponse(resp)
+        else:
+            resp = jsonify({"status":"error", "msj": "Debe ingresar un usuario"})
+            return sendResponse(resp)    
+    except Exception as e:
+        print(e)
+    
+@modules.route('/business/files', methods=['POST'])
+def businessFiles():
+    try:
+        if request.method=='POST':
+            _json= request.get_json(force=True)
+            _id_empresa=_json['id_empresa']
+            if _id_empresa:
+                conn = mysql.connect()
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+                cursor.execute("SELECT * FROM  vw_documents_company WHERE id_empresa=%s",_id_empresa)
+                row = cursor.fetchall()
+                if row:
+                    resp = jsonify(row)            
+                    resp.status_code = 200
+                    return sendResponse(resp)
+                elif not row:
+                    resp = jsonify({"status":'warning', "msj":"El fabricante no posee documentos"})
+                    return sendResponse(resp)    
+            else:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un fabricante"})
+                return sendResponse(resp)  
+        else:
+            resp = jsonify({"status":'error', "msj":"Debe enviar datos"})
+            return sendResponse(resp)  
+    except Exception as e:
+        print(e)
+    finally:
+        if _id_empresa:
+            cursor.close()
+            conn.close()
