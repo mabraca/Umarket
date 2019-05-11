@@ -104,12 +104,11 @@ class Company():
             cursor.execute(sql,data)
             resource=cursor.lastrowid
             conn.commit()
-            return resource
-                    
+            return resource                    
         except Exception as e:
             print(e)
     
-    def validateCompany(self,   id_empresa,id_tipo_empresa):
+    def validateCompany(self,id_empresa,id_tipo_empresa):
         try:
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)
@@ -124,21 +123,22 @@ class Company():
         finally:
             pass
     
-    def generateAccessCode(self,id_empresa,id_tipo_empresa):
+    def generateAccessCode(id_empresa,strusuario):
         try:
             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
             longitud = 8  # La longitud que queremos
             codigo_acceso = ''.join(random.choice(caracteres) for _ in range(longitud))
             print("codigo->"+codigo_acceso)
+            _hashed_password = hashlib.md5codigo_acceso.encode()
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)
-            sql="UPDATE dt_empresa SET strcodigo_acceso=%s WHERE id_empresa=%s AND id_tipo=%s"
-            data=(codigo_acceso,id_empresa,id_tipo_empresa)
+            sql="UPDATE dt_usuarios SET strcontrasena=%s WHERE id_empresa=%s AND strusuario=%s"
+            data=(_hashed_password.hexdigest(),id_empresa, strusuario)
             afectado=cursor.execute(sql,data)
             conn.commit()
             return codigo_acceso
-        except expression as identifier:
-            pass
+        except Exception as e:
+            print(e)
         finally:
             pass
                 
@@ -185,3 +185,17 @@ class Company():
             cursor.close()
             conn.close()
     
+    def registerDataBank(id_empresa,strcuenta):
+        try:
+            conn=mysql.connect()
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            sql="INSERT INTO dt_datos_bancarios_empresa (id_empresa,strcuenta)VALUES(%s, %s)"
+            data=(id_empresa,strcuenta)
+            cursor.execute(sql,data)
+            resource=cursor.lastrowid
+            conn.commit()
+            return resource
+        except Exception as e:
+            print(e)
+        finally:
+            pass

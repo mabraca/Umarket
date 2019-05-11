@@ -51,9 +51,18 @@ def addUser():
                 cursor = conn.cursor()
                 cursor.execute(sql, data)
                 conn.commit()
+                #Envío de correo usando hilos
+                @copy_current_request_context
+                def send_message(token,strcorreo,nombapell,url_activacion):
+                    send_mail(token,strcorreo,nombapell,url_activacion)
+
+                sender= threading.Thread(name='mail_sender',target=send_message, args=(_token,_strcorreo,nombapell,_url_activacion))
+                sender.start()
                 resp = jsonify({"status":'success', "msj":"El usuario fue registrado","token":_token})                                    
-                resp.status_code = 200                                    
-                send_mail(_token,_strcorreo,nombapell,_url_activacion)
+                resp.status_code = 200    
+                
+                
+                #send_mail(_token,_strcorreo,nombapell,_url_activacion)
                 return sendResponse(resp)
             else:
                 resp = jsonify({"status":'error', "msj":"El usuario ya se encuentra registrado"})
@@ -205,6 +214,8 @@ def user_validate(strcorreo):
     finally:
         cursor.close()
         conn.close()
+
+
 #Funcion que valida si el correo electronico existe
 def email_validate(strcorreo):
     try:
@@ -317,6 +328,25 @@ def addUserRetail(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
         cursor.close()
         conn.close()
 
+
+
+def addUserManufacturer(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
+    try:
+        _hashed_password = hashlib.md5(strcontrasena.encode())
+        sql = "INSERT INTO dt_usuarios(strusuario,strcorreo, strcontrasena, id_rol, strnombres, id_empresa) VALUES(%s, %s, %s,%s,%s, %s)"
+        data = (strusuario, strcorreo, _hashed_password.hexdigest(), 3, strnombres,id_empresa)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute(sql, data)
+        resource=cursor.lastrowid
+        conn.commit()
+        return  resource       
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
 def userBussiness_validate(strusuario):
     try:
         print(strusuario)
@@ -326,6 +356,36 @@ def userBussiness_validate(strusuario):
         row = cursor.fetchone()
         print(row)
         return row
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def search_user(id_empresa):
+    try:
+        _strcorreo=strcorreo
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        sql="SELECT * FROM dt_usuarios WHERE id_empresa=%s"
+        cursor.execute(sql,id_empresa)
+        row = cursor.fetchone()
+        return row
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def deleteUserRetail():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM dt_usuarios WHERE id_empresa=%s", (id_empresa,))
+        conn.commit()
+        resp = jsonify({"status":"success","msj":"El usuario fue eliminado"})
+        resp.status_code = 200
+        return sendResponse(resp)
     except Exception as e:
         print(e)
     finally:

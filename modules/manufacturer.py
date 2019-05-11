@@ -25,6 +25,7 @@ def registerManufacturer():
         manufacturer.strtelefono=str(_json['strphone'])
         manufacturer.id_tipo=_json['id_type']
         manufacturer.blnafiliacion=_json['validated']
+        strcuenta=_json['strcuenta']
         if not _json['id_type']==1:
             resp = jsonify({"status":'error', "msj":"El tipo de empresa debe ser Fabricante"})
             return sendResponse(resp)
@@ -63,6 +64,14 @@ def registerManufacturer():
             if not manufacturer.id_tipo:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
                 return sendResponse(resp)
+            if not strcuenta:
+                resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
+                return sendResponse(resp)
+            else:
+                if len(strcuenta)<20 :
+                    resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta de 20"})
+                    return sendResponse(resp)
+
             print("antes de validar company")
             
             print(manufacturer.strrif_empresa)                    
@@ -81,19 +90,15 @@ def registerManufacturer():
                 if fabricante:     
                     print("registro")                                
                     manufacturer.id_empresa=fabricante
-                    print("files")
-                    if manufacturer.blnafiliacion==False:
-                        print("se envio correo de preafilicion")
-                        send_mailCompany(manufacturer.strcorreo,manufacturer.strnombre_empresa)  
- 
+                    print("files")                   
                     if request.files:
                         print("request.files")
                         fileRegistroMercantil=request.files['file[0]']
                         fileRif=request.files['file[1]']
                         fileCi=request.files['file[2]']
-                        fileReciboServicio=request.files['file[3]']                    
+                        #fileReciboServicio=request.files['file[3]']                    
                         #Creación de la carpeta 
-                        folder_documents=time.strftime("%Y%m%d")
+                        folder_documents=time.strftime("%Y-%m-%d")
                         ruta=app.config['UPLOAD_FOLDER']+folder_documents
                         if not os.path.exists(ruta):  #Si la carpeta no existe la crea de lo contrario usa la del día               
                             os.makedirs(app.config['UPLOAD_FOLDER']+folder_documents)
@@ -125,19 +130,19 @@ def registerManufacturer():
                             resp = jsonify({"status":'error', "msj":"Debe adjuntar la Cédula de Identidad"})
                             return sendResponse(resp)            
 
-                        if  fileReciboServicio:
+                        """if  fileReciboServicio:
                             if not fileReciboServicio.filename.split('.')[1]=='pdf':
                                 resp = jsonify({"status":'error', "msj":"El Reccibo de servicios debe estar en formato .pdf"})
                                 return sendResponse(resp) 
                         else:
                             resp = jsonify({"status":'error', "msj":"Debe adjuntar el Recibo de Servicios"})
-                            return sendResponse(resp)    
+                            return sendResponse(resp) """   
 
-                        ruta_comercio=path_folder_documents+"/"+folder_documents+"-"+str(manufacturer.id_empresa)
+                        ruta_fabricante=path_folder_documents+"/"+manufacturer.strrif_empresa
                         
-                        if not os.path.exists(ruta_comercio):
+                        if not os.path.exists(ruta_fabricante):
                             print("crear carpeta")
-                            os.makedirs(ruta_comercio)                    
+                            os.makedirs(ruta_fabricante)                    
                         else:
                             print("existe carpeta")               
                     else:
@@ -145,50 +150,81 @@ def registerManufacturer():
                         return sendResponse(resp)
 
                     #Guardado de los archivos en el servidor y el registro de la ruta en base de datos
-                    filename_regmercantil="RM_"+str(manufacturer.id_empresa)+"."+secure_filename(fileRegistroMercantil.filename)
-                    fileRegistroMercantil.save(os.path.join(ruta_comercio,filename_regmercantil))          
+                    filename_regmercantil="RM_"+secure_filename(fileRegistroMercantil.filename)
+                    fileRegistroMercantil.save(os.path.join(ruta_fabricante,filename_regmercantil))          
                     print(filename_regmercantil)
-                    urlArchivoRm=str(ruta_comercio+"/"+filename_regmercantil)
+                    urlArchivoRm=str(ruta_fabricante+"/"+filename_regmercantil)
                     print(manufacturer.id_empresa)
-                    documentosRM=manufacturer.registerDocumentsCompany(urlArchivoRm,manufacturer.id_empresa,3)
+                    #documentosRM=manufacturer.registerDocumentsCompany(urlArchivoRm,manufacturer.id_empresa,3)
 
-                    filename_rif="RIF_"+str(manufacturer.id_empresa)+"."+secure_filename(fileRif.filename)
-                    fileRif.save(os.path.join(ruta_comercio,filename_rif))
+                    filename_rif="RIF_"+secure_filename(fileRif.filename)
+                    fileRif.save(os.path.join(ruta_fabricante,filename_rif))
                     print(filename_rif)
-                    urlArchivoRif=str(ruta_comercio+"/"+filename_rif)
-                    documentosRIF=manufacturer.registerDocumentsCompany(urlArchivoRif,manufacturer.id_empresa,4)
+                    urlArchivoRif=str(ruta_fabricante+"/"+filename_rif)
+                    #documentosRIF=manufacturer.registerDocumentsCompany(urlArchivoRif,manufacturer.id_empresa,4)
 
-                    filename_ci="CI_"+str(manufacturer.id_empresa)+"."+secure_filename(fileCi.filename)
-                    fileCi.save(os.path.join(ruta_comercio,filename_ci))
+                    filename_ci="CI_"+secure_filename(fileCi.filename)
+                    fileCi.save(os.path.join(ruta_fabricante,filename_ci))
                     print(filename_ci)
-                    urlArchivoCi=str(ruta_comercio+"/"+filename_ci)
-                    documentosCI=manufacturer.registerDocumentsCompany(urlArchivoCi,manufacturer.id_empresa,5)
+                    urlArchivoCi=str(ruta_fabricante+"/"+filename_ci)
+                    documentos_guardados=manufacturer.registerDocumentsCompany(ruta_fabricante,manufacturer.id_empresa,folder_documents)
 
-                    filename_rs= "RS_"+str(manufacturer.id_empresa)+"."+secure_filename(fileReciboServicio.filename)
-                    fileReciboServicio.save(os.path.join(ruta_comercio,filename_rs))
-                    print(filename_rs+"recibo servicios")
-                    urlArchivoRs=str(ruta_comercio+"/"+filename_rs)
-                    documentosRS=manufacturer.registerDocumentsCompany(urlArchivoRs,manufacturer.id_empresa,6)    
-
-                    if documentosRM and documentosRIF and documentosCI and documentosRS:
+                    if documentos_guardados:
                         if manufacturer.blnafiliacion==True:
                             print("afiliacion true")
                             print("afiliacion->"+str(manufacturer.blnafiliacion))
-                            codigoAcceso=manufacturer.generateAccessCode(manufacturer.id_empresa,manufacturer.id_tipo)
-                            if codigoAcceso:
+                            user_manufacturer=search_user(manufacturer.id_empresa)
+                            codigoAcceso=manufacturer.generateAccessCode(manufacturer.id_empresa,user_manufacturer['strusuario'])
+                          
+                            #adduser_manufacturer=addUserManufacturer(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
+                            if user_manufacturer:
                                 print("se envio correo de afiliacion")
-                                send_mailCompanyCode(manufacturer.strcorreo,manufacturer.strnombre_empresa,codigoAcceso)                        
+                                #send_mailCompanyCode(manufacturer.strcorreo,manufacturer.strnombre_empresa,codigoAcceso)  
+
+                                #Envío de correo usando hilos
+                                @copy_current_request_context
+                                def send_message(strcorreo,strnombre_empresa,codigoAcceso,strusuario):
+                                    send_mailCompanyCode(strcorreo,strnombre_empresa,codigoAcceso,strusuario)
+
+                                sender= threading.Thread(name='mail_sender',target=send_message, args=(manufacturer.strcorreo,manufacturer.strnombre_empresa,codigoAcceso,user_manufacturer['strusuario']))
+                                sender.start()                      
                                 resp = jsonify({"status":'success', "msj":"El Fabricante fue registrado con éxito"})
                                 return sendResponse(resp)
                             else:
                                 resp = jsonify({"status":'success', "msj":"El Fabricante no fue registrado"})
                                 return sendResponse(resp)
                         else:
-                            resp = jsonify({"status":'success', "msj":"El Fabricante fue pre-afiliado con éxito"})
-                            return sendResponse(resp)
+                            datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,strcuenta)
+                            if datos_bancarios:
+                                print("se envio correo de preafilicion")
+                                #send_mailCompany(manufacturer.strcorreo,manufacturer.strnombre_empresa)  
+                                @copy_current_request_context
+                                def send_message(strcorreo,strnombre_empresa):
+                                    send_mailCompany(strcorreo,strnombre_empresa)
+
+                                sender= threading.Thread(name='mail_sender',target=send_message, args=(manufacturer.strcorreo,manufacturer.strnombre_empresa))
+                                sender.start()  
+
+                                resp = jsonify({"status":'success', "msj":"El Fabricante fue pre-afiliado con éxito"})
+                                return sendResponse(resp)
+                            else:
+                                manufacturerDelDoc=manufacturer.deleteDocuments()
+                                if manufacturerDelDoc:
+                                    manufacturerDel=manufacturer.deleteCompany()
+                                if manufacturerDel:
+                                    deleteUserRetail=deleteUserManufacturer(manufacturer.id_empresa)
+                                if deleteUserRetail:
+                                    resp = jsonify({"status":'error', "msj":"El Fabricante no fue preafiliado"})                    
+                                    return sendResponse(resp)
                     else:
-                        resp = jsonify({"status":'error', "msj":"El Fabricante no fue registrado"})                    
-                        return sendResponse(resp)
+                        manufacturerDelDoc=manufacturer.deleteDocuments()
+                        if manufacturerDelDoc:
+                            manufacturerDel=manufacturer.deleteCompany()
+                        if manufacturerDel:
+                            deleteUserRetail=deleteUserManufacturer(manufacturer.id_empresa)
+                        if deleteUserRetail:
+                            resp = jsonify({"status":'error', "msj":"El Fabricante no fue preafiliado"})                    
+                            return sendResponse(resp)                              
         else:
             resp = jsonify({"status":'error', "msj":"Debe enviar datos"})                    
             return sendResponse(resp)
@@ -242,12 +278,20 @@ def manufacturerValidate():
                 else:
                     resp = jsonify({"status":'error', "msj":"El fabricate ya fue validado"})
                     return sendResponse(resp)  
-
-
             if validar:
-                codigoAcceso=manufacturer.generateAccessCode(_id_empresa,_id_tipo_empresa)
-                if codigoAcceso:
+                usuario_fabricante=search_user(id_empresa)
+                codigoAcceso=manufacturer.generateAccessCode(_id_empresa,usuario_fabricante['strusuario'])
+                if usuario_fabricante:
                     send_mailCompanyCode(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso)
+
+                    #Envío de correo usando hilos
+                    @copy_current_request_context
+                    def send_message(strcorreo,strnombre_empresa,codigoAcceso,strusuario):
+                        send_mailCompanyCode(strcorreo,strnombre_empresa,codigoAcceso,strusuario)
+                    
+                    sender= threading.Thread(name='mail_sender',target=send_message, args=(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso,usuario_fabricante['strusuario']))
+                    sender.start()       
+
                     resp = jsonify({"status":'success', "msj":"El fabricante fue validado con éxito"})
                     return sendResponse(resp)
             else:

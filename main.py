@@ -5,49 +5,39 @@ from flask import flash, request,make_response, current_app, Blueprint, jsonify,
 from werkzeug import generate_password_hash, check_password_hash
 import hashlib
 from flask_mail import Mail, Message
+from flask import render_template
 from validate_email import validate_email
+import threading
 from modules import *
+from flask import copy_current_request_context
 import db_config, string,random
 
 app.register_blueprint(modules)
 
 
 def send_mail(token,email,nombapell,url_activacion):
-    """Envio ."""
     #msj = "Activacion de usuario"
-    recipients = [email]
-    msg_object = Message("Activación de usuario UbiiMarket", recipients)
-    msg_object.body = "Activación de usuario "+nombapell+", Código: "+ token +" por favor acceder a esta url para activar: "+url_activacion
-    mail.send(msg_object)
-    return "Sent"
-
+    msg= Message('Gracias por su Registro en UbiiMarket!', recipients = [email])
+    msg.html= render_template('email_registro.html',nombapell=nombapell,url_activacion=url_activacion,token=token)
+    mail.send(msg)
 
 def send_mailCompany(email,company):
-    """Envio ."""
-    #msj = "Activacion de usuario"
-    recipients = [email]
-    msg_object = Message("Registro de Pre-Afiliación UbiiMarket", recipients)
-    msg_object.body = "Usted realizó el registro de Pre-Afiliación "+company
-    mail.send(msg_object)
-    return "Sent"
+    #PreAfiliación"    
+    msg = Message("Registro de Pre-Afiliación UbiiMarket", recipients = [email])
+    msg.html= render_template('email_preafiliacion.html', company=company)
+    mail.send(msg)
 
-def send_mailCompanyCode(email,company,access_code):
-    """Envio ."""
-    #msj = "Activacion de usuario"
-    recipients = [email]
-    msg_object = Message("Registro de Afiliación UbiiMarket", recipients)
-    msg_object.body = "Usted "+company+" esta afiliado en UbiiMarket y su código de acceso es: "+access_code
-    mail.send(msg_object)
-    return "Sent"
+def send_mailCompanyCode(email,company,access_code,struser):
+    #"Envío de credenciales al Fabricante"
+    msg = Message("Registro de Afiliación UbiiMarket", recipients = [email])
+    msg.html= render_template('email_afiliacion.html', company=company, strpassword=access_code, struser=struser)    
+    mail.send(msg)
 
 def send_mailCompanyActivation(email,company):
-    """Envio ."""
-    #msj = "Activacion de usuario"
-    recipients = [email]
-    msg_object = Message("Registro de Afiliación UbiiMarket", recipients)
-    msg_object.body = "Usted "+company+" esta afiliado en UbiiMarket, ya puede acceder con su usuario y contraseña: "
-    mail.send(msg_object)
-    return "Sent"
+    #"Activacion de usuario de comercio"    
+    msg = Message("Registro de Afiliación UbiiMarket", recipients = [email])
+    msg.html= render_template('email_afiliacion_retail.html', company=company)
+    mail.send(msg)
 
 def sendResponse(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -65,4 +55,4 @@ def not_found(error=None):
     return resp
 
 if __name__ == "__main__":
-    app.run(port=3000, host="0.0.0.0")
+    app.run(debug=True, port=3000, host="0.0.0.0")

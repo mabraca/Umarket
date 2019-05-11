@@ -97,9 +97,9 @@ def registerBussines():
                         fileRegistroMercantil=request.files['file[0]']
                         fileRif=request.files['file[1]']
                         fileCi=request.files['file[2]']
-                        fileReciboServicio=request.files['file[3]']                    
+                        #fileReciboServicio=request.files['file[3]']                    
                         #Creación de la carpeta 
-                        folder_documents=time.strftime("%Y%m%d")
+                        folder_documents=time.strftime("%Y-%m-%d")
                         ruta=app.config['UPLOAD_FOLDER']+folder_documents
                         if not os.path.exists(ruta):  #Si la carpeta no existe la crea de lo contrario usa la del día               
                             os.makedirs(app.config['UPLOAD_FOLDER']+folder_documents)
@@ -129,17 +129,9 @@ def registerBussines():
                                 return sendResponse(resp) 
                         else:
                             resp = jsonify({"status":'error', "msj":"Debe adjuntar la Cédula de Identidad"})
-                            return sendResponse(resp)            
+                            return sendResponse(resp)             
 
-                        if  fileReciboServicio:
-                            if not fileReciboServicio.filename.split('.')[1]=='pdf':
-                                resp = jsonify({"status":'error', "msj":"El Reccibo de servicios debe estar en formato .pdf"})
-                                return sendResponse(resp) 
-                        else:
-                            resp = jsonify({"status":'error', "msj":"Debe adjuntar el Recibo de Servicios"})
-                            return sendResponse(resp)    
-
-                        ruta_comercio=path_folder_documents+"/"+folder_documents+"-"+str(retail.id_empresa)
+                        ruta_comercio=path_folder_documents+"/"+str(retail.strrif_empresa)
                         
                         if not os.path.exists(ruta_comercio):
                             print("crear carpeta")
@@ -153,48 +145,52 @@ def registerBussines():
                             return sendResponse(resp)
 
                     #Guardado de los archivos en el servidor y el registro de la ruta en base de datos
-                    filename_regmercantil="RM_"+str(retail.id_empresa)+"."+secure_filename(fileRegistroMercantil.filename)
+                    filename_regmercantil="RM_"+secure_filename(fileRegistroMercantil.filename)
                     fileRegistroMercantil.save(os.path.join(ruta_comercio,filename_regmercantil))          
                     print(filename_regmercantil)
                     urlArchivoRm=str(ruta_comercio+"/"+filename_regmercantil)
                     print(retail.id_empresa)
-                    documentosRM=retail.registerDocumentsCompany(urlArchivoRm,retail.id_empresa,3)
+                    #documentosRM=retail.registerDocumentsCompany(urlArchivoRm,retail.id_empresa,3)
 
-                    filename_rif="RIF_"+str(retail.id_empresa)+"."+secure_filename(fileRif.filename)
+                    filename_rif="RIF_"+secure_filename(fileRif.filename)
                     fileRif.save(os.path.join(ruta_comercio,filename_rif))
                     print(filename_rif)
                     urlArchivoRif=str(ruta_comercio+"/"+filename_rif)
-                    documentosRIF=retail.registerDocumentsCompany(urlArchivoRif,retail.id_empresa,4)
+                    #documentosRIF=retail.registerDocumentsCompany(urlArchivoRif,retail.id_empresa,4)
 
-                    filename_ci="CI_"+str(retail.id_empresa)+"."+secure_filename(fileCi.filename)
+                    filename_ci="CI_"+secure_filename(fileCi.filename)
                     fileCi.save(os.path.join(ruta_comercio,filename_ci))
                     print(filename_ci)
                     urlArchivoCi=str(ruta_comercio+"/"+filename_ci)
-                    documentosCI=retail.registerDocumentsCompany(urlArchivoCi,retail.id_empresa,5)
+                    documentosCI=retail.registerDocumentsCompany(ruta_comercio,retail.id_empresa,5)
 
-                    filename_rs= "RS_"+str(retail.id_empresa)+"."+secure_filename(fileReciboServicio.filename)
+                    """filename_rs= "RS_"+str(retail.id_empresa)+"."+secure_filename(fileReciboServicio.filename)
                     fileReciboServicio.save(os.path.join(ruta_comercio,filename_rs))
                     print(filename_rs+"recibo servicios")
                     urlArchivoRs=str(ruta_comercio+"/"+filename_rs)
-                    documentosRS=retail.registerDocumentsCompany(urlArchivoRs,retail.id_empresa,6)    
+                    documentosRS=retail.registerDocumentsCompany(urlArchivoRs,retail.id_empresa,6)"""    
+                    
 
-                    if documentosRM and documentosRIF and documentosCI and documentosRS:
-                        adduser_retail=addUserRetail(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
-                        if adduser_retail:
-                            send_mailCompany(retail.strcorreo,retail.strnombre_empresa)  
-                            resp = jsonify({"status":'success', "msj":"El comercio fue registrado con éxito"})
-                            return sendResponse(resp) 
-                        else:
-                            retailDelDoc=retail.deleteDocuments()
-                            if retailDelDoc:
-                                retailDel=retail.deleteCompany()
-                                if retailDel:
-                                    resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
-                                    return sendResponse(resp)                                   
+                    if documentosRM and documentosRIF and documentosCI :
+                        #adduser_retail=addUserRetail(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
+                        #if adduser_retail:
+                        send_mailCompany(retail.strcorreo,retail.strnombre_empresa)
+                        @copy_current_request_context
+                        def send_message(strcorreo,strnombre_empresa):
+                            send_mailCompany(strcorreo,strnombre_empresa)
+
+                        sender= threading.Thread(name='mail_sender',target=send_message, args=(retail.strcorreo,retail.strnombre_empresa))
+                        sender.start()  
+  
+                        resp = jsonify({"status":'success', "msj":"El comercio fue preafiliado con éxito"})
+                        return sendResponse(resp) 
                     else:
-
-                        resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
-                        return sendResponse(resp)
+                        retailDelDoc=retail.deleteDocuments()
+                        if retailDelDoc:
+                            retailDel=retail.deleteCompany()
+                            if retailDel:
+                                resp = jsonify({"status":'error', "msj":"El comercio no fue preafiliado"})                    
+                                return sendResponse(resp)                                   
                 else:
                     resp = jsonify({"status":'error', "msj":"El comercio no fue registrado"})                    
                     return sendResponse(resp)
@@ -277,7 +273,15 @@ def retailValidated():
             if validar:                
                 if activarUser:
                     print("envio de correo  activacion")
-                    send_mailCompanyActivation(existe_retail['strcorreo'],existe_retail['strnombre_empresa'])
+                    #send_mailCompanyActivation(existe_retail['strcorreo'],existe_retail['strnombre_empresa'])
+                    #Envío de correo usando hilos
+                    @copy_current_request_context
+                    def send_message(strcorreo,strnombre_empresa):
+                        send_mailCompanyActivation(strcorreo,strnombre_empresa)
+
+                    sender= threading.Thread(name='mail_sender',target=send_message, args=(existe_retail['strcorreo'],existe_retail['strnombre_empresa']))
+                    sender.start()
+
                     resp = jsonify({"status":'success', "msj":"El comercio fue validado con éxito"})
                     return sendResponse(resp)
             else:
