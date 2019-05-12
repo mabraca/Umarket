@@ -277,7 +277,7 @@ def activate_user(token):
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         afectado=cursor.execute("UPDATE dt_usuarios SET id_status=2 WHERE token=%s",_token)
         conn.commit()
-        return afectado
+        return True
     except Exception as e:
         print(e)
     finally:
@@ -286,12 +286,12 @@ def activate_user(token):
 
 def activate_userRetail(id_empresa):
     try:    
+        print("activar usuario")
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         afectado=cursor.execute("UPDATE dt_usuarios SET id_status=2 WHERE id_empresa=%s",id_empresa)
         conn.commit()
-        print(afectado)
-        return afectado
+        return True
     except Exception as e:
         print(e)
     finally:
@@ -364,7 +364,7 @@ def userBussiness_validate(strusuario):
 
 def search_user(id_empresa):
     try:
-        _strcorreo=strcorreo
+
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         sql="SELECT * FROM dt_usuarios WHERE id_empresa=%s"
@@ -377,7 +377,7 @@ def search_user(id_empresa):
         cursor.close()
         conn.close()
 
-def deleteUserRetail():
+def deleteUserManufacturer():
     try:
         conn = mysql.connect()
         cursor = conn.cursor()

@@ -42,6 +42,7 @@ class Company():
 
     def registerCompany(self):
         try: 
+            print("register company")
             if self.blnafiliacion==True:
                 self.id_status=4
             else:
@@ -50,6 +51,7 @@ class Company():
             sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo,id_status) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
             data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo,self.id_status)
             conn = mysql.connect()
+            print(sql,data)
             cursor = conn.cursor()
             cursor.execute(sql, data)
             resource=cursor.lastrowid
@@ -95,12 +97,12 @@ class Company():
             cursor.close()
             conn.close()
     
-    def registerDocumentsCompany(self,strulr,id_empresa,id_tipo):
+    def registerDocumentsCompany(self,strulr,id_empresa,datfecha):
         try:
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)
-            sql="INSERT INTO dt_documentos_empresa (id_empresa,id_tipo,strurl_documento)VALUES(%s, %s, %s)"
-            data=(id_empresa,id_tipo,strulr)
+            sql="INSERT INTO dt_documentos_empresa (id_empresa,strurl_documento,datfecha)VALUES(%s, %s, %s)"
+            data=(id_empresa,strulr,datfecha)
             cursor.execute(sql,data)
             resource=cursor.lastrowid
             conn.commit()
@@ -121,18 +123,19 @@ class Company():
         except Exception as e:
             print(e)
         finally:
-            pass
+            conn.close
+            cursor.close
     
-    def generateAccessCode(id_empresa,strusuario):
+    def generateAccessCode(self,id_empresa,strusuario):
         try:
             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
             longitud = 8  # La longitud que queremos
             codigo_acceso = ''.join(random.choice(caracteres) for _ in range(longitud))
             print("codigo->"+codigo_acceso)
-            _hashed_password = hashlib.md5codigo_acceso.encode()
+            _hashed_password = hashlib.md5(codigo_acceso.encode())
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)
-            sql="UPDATE dt_usuarios SET strcontrasena=%s WHERE id_empresa=%s AND strusuario=%s"
+            sql="UPDATE dt_usuarios SET strcontrasena=%s, id_status=2 WHERE id_empresa=%s AND strusuario=%s"
             data=(_hashed_password.hexdigest(),id_empresa, strusuario)
             afectado=cursor.execute(sql,data)
             conn.commit()
@@ -185,7 +188,7 @@ class Company():
             cursor.close()
             conn.close()
     
-    def registerDataBank(id_empresa,strcuenta):
+    def registerDataBank(self,id_empresa,strcuenta):
         try:
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)

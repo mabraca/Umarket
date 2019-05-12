@@ -4,7 +4,7 @@ import db_config
 from . import modules
 import os,time
 from werkzeug.utils import secure_filename
-
+from .moduser import *
 @modules.route('/manufacturer/register', methods=['POST'])
 def registerManufacturer():
     try:
@@ -12,6 +12,7 @@ def registerManufacturer():
         manufacturer= Company() #Instancia  
         print("paso instancia")   
         _json=json.loads(request.values['data'])
+        print("load json")
         print(_json)      
         print(request.values)
         print(request.files)    
@@ -72,12 +73,11 @@ def registerManufacturer():
                     resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta de 20"})
                     return sendResponse(resp)
 
-            print("antes de validar company")
-            
+            print("antes de validar company")            
             print(manufacturer.strrif_empresa)                    
             existe_company=manufacturer.existeCompany() 
             existe_email=manufacturer.existeEmail(manufacturer.strcorreo)
-                        
+            print(existe_email)       
             if  existe_company:
                 resp = jsonify({"status":'error', "msj":"El fabricante se encuentra registrado"})
                 return sendResponse(resp)
@@ -88,17 +88,17 @@ def registerManufacturer():
             else:
                 fabricante=manufacturer.registerCompany()
                 if fabricante:     
-                    print("registro")                                
+                    print("registro de la fabrica")                                
                     manufacturer.id_empresa=fabricante
                     print("files")                   
                     if request.files:
                         print("request.files")
+                        print(request.files)
                         fileRegistroMercantil=request.files['file[0]']
                         fileRif=request.files['file[1]']
-                        fileCi=request.files['file[2]']
-                        #fileReciboServicio=request.files['file[3]']                    
+                        fileCi=request.files['file[2]']                                          
                         #Creación de la carpeta 
-                        folder_documents=time.strftime("%Y-%m-%d")
+                        folder_documents=time.strftime("%Y%m%d")
                         ruta=app.config['UPLOAD_FOLDER']+folder_documents
                         if not os.path.exists(ruta):  #Si la carpeta no existe la crea de lo contrario usa la del día               
                             os.makedirs(app.config['UPLOAD_FOLDER']+folder_documents)
@@ -128,15 +128,7 @@ def registerManufacturer():
                                 return sendResponse(resp) 
                         else:
                             resp = jsonify({"status":'error', "msj":"Debe adjuntar la Cédula de Identidad"})
-                            return sendResponse(resp)            
-
-                        """if  fileReciboServicio:
-                            if not fileReciboServicio.filename.split('.')[1]=='pdf':
-                                resp = jsonify({"status":'error', "msj":"El Reccibo de servicios debe estar en formato .pdf"})
-                                return sendResponse(resp) 
-                        else:
-                            resp = jsonify({"status":'error', "msj":"Debe adjuntar el Recibo de Servicios"})
-                            return sendResponse(resp) """   
+                            return sendResponse(resp)             
 
                         ruta_fabricante=path_folder_documents+"/"+manufacturer.strrif_empresa
                         
@@ -167,7 +159,9 @@ def registerManufacturer():
                     fileCi.save(os.path.join(ruta_fabricante,filename_ci))
                     print(filename_ci)
                     urlArchivoCi=str(ruta_fabricante+"/"+filename_ci)
-                    documentos_guardados=manufacturer.registerDocumentsCompany(ruta_fabricante,manufacturer.id_empresa,folder_documents)
+                    datfecha=time.strftime("%Y-%m-%d")
+                    print(ruta_fabricante,manufacturer.id_empresa,datfecha)
+                    documentos_guardados=manufacturer.registerDocumentsCompany(ruta_fabricante,manufacturer.id_empresa,datfecha)
 
                     if documentos_guardados:
                         if manufacturer.blnafiliacion==True:
@@ -175,8 +169,7 @@ def registerManufacturer():
                             print("afiliacion->"+str(manufacturer.blnafiliacion))
                             user_manufacturer=search_user(manufacturer.id_empresa)
                             codigoAcceso=manufacturer.generateAccessCode(manufacturer.id_empresa,user_manufacturer['strusuario'])
-                          
-                            #adduser_manufacturer=addUserManufacturer(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
+                
                             if user_manufacturer:
                                 print("se envio correo de afiliacion")
                                 #send_mailCompanyCode(manufacturer.strcorreo,manufacturer.strnombre_empresa,codigoAcceso)  
@@ -196,8 +189,7 @@ def registerManufacturer():
                         else:
                             datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,strcuenta)
                             if datos_bancarios:
-                                print("se envio correo de preafilicion")
-                                #send_mailCompany(manufacturer.strcorreo,manufacturer.strnombre_empresa)  
+                                print("se envio correo de preafilicion")                    
                                 @copy_current_request_context
                                 def send_message(strcorreo,strnombre_empresa):
                                     send_mailCompany(strcorreo,strnombre_empresa)
@@ -208,23 +200,31 @@ def registerManufacturer():
                                 resp = jsonify({"status":'success', "msj":"El Fabricante fue pre-afiliado con éxito"})
                                 return sendResponse(resp)
                             else:
+                                print("no se registraron datos bancarios")
                                 manufacturerDelDoc=manufacturer.deleteDocuments()
                                 if manufacturerDelDoc:
+                                    print("elimino documentos")
                                     manufacturerDel=manufacturer.deleteCompany()
                                 if manufacturerDel:
-                                    deleteUserRetail=deleteUserManufacturer(manufacturer.id_empresa)
-                                if deleteUserRetail:
+                                    print("elimino compania")
+                                    manufacturerDelUser=deleteUserManufacturer(manufacturer.id_empresa)
+                                if manufacturerDelUser:
+                                    print("elimino user")
                                     resp = jsonify({"status":'error', "msj":"El Fabricante no fue preafiliado"})                    
                                     return sendResponse(resp)
                     else:
+                        print("no se registraron documentos")
                         manufacturerDelDoc=manufacturer.deleteDocuments()
                         if manufacturerDelDoc:
+                            print("elimino documentos")
                             manufacturerDel=manufacturer.deleteCompany()
                         if manufacturerDel:
-                            deleteUserRetail=deleteUserManufacturer(manufacturer.id_empresa)
-                        if deleteUserRetail:
+                            print("elimino compania")
+                            manufacturerDelUser=deleteUserManufacturer(manufacturer.id_empresa)
+                        if manufacturerDelUser:
+                            print("elimino user")
                             resp = jsonify({"status":'error', "msj":"El Fabricante no fue preafiliado"})                    
-                            return sendResponse(resp)                              
+                            return sendResponse(resp)                          
         else:
             resp = jsonify({"status":'error', "msj":"Debe enviar datos"})                    
             return sendResponse(resp)
@@ -263,7 +263,7 @@ def manufacturerValidate():
                 resp = jsonify({"status":'error', "msj":"De seleccionar un Fabricante"})
                 return sendResponse(resp)  
             existe_manufacturer=manufacturer.companyView(_id_empresa) 
-            print("existe->"+str(existe_manufacturer))
+            print("existe->"+str(   ))
             if existe_manufacturer==None:
                 resp = jsonify({"status":'error', "msj":"El Fabricante no existe"})
                 return sendResponse(resp)  
@@ -279,14 +279,14 @@ def manufacturerValidate():
                     resp = jsonify({"status":'error', "msj":"El fabricate ya fue validado"})
                     return sendResponse(resp)  
             if validar:
-                usuario_fabricante=search_user(id_empresa)
+                usuario_fabricante=search_user(_id_empresa)
                 codigoAcceso=manufacturer.generateAccessCode(_id_empresa,usuario_fabricante['strusuario'])
                 if usuario_fabricante:
-                    send_mailCompanyCode(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso)
-
+                    #send_mailCompanyCode(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso)
                     #Envío de correo usando hilos
                     @copy_current_request_context
                     def send_message(strcorreo,strnombre_empresa,codigoAcceso,strusuario):
+                        print("envio de correo en hilo")
                         send_mailCompanyCode(strcorreo,strnombre_empresa,codigoAcceso,strusuario)
                     
                     sender= threading.Thread(name='mail_sender',target=send_message, args=(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso,usuario_fabricante['strusuario']))
@@ -354,43 +354,56 @@ def manufacturerDocuments():
             cursor.close()
             conn.close()
 
-@modules.route('/manufacturer/access', methods=['POST'])
+@modules.route('/manufacturer/login', methods=['POST'])
 def manufacturerAccess():
     try:        
         if request.method== 'POST':
             _json= request.get_json(force=True)
             print(_json)
             _strcodigo_acceso = _json['straccess_code']
-            if _strcodigo_acceso and  request.method == 'POST':            
-                    existe_manufacturer=validateCode(_strcodigo_acceso)
-                    if existe_manufacturer:
-                        if existe_manufacturer['id_status']==4:                        
-                                caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
-                                longitud = 32  # La longitud que queremos
-                                _token = ''.join(random.choice(caracteres) for _ in range(longitud))
-                                resp = jsonify({"status":"success", "msj":"El fabricante logeado","strnombre_empresa":existe_manufacturer['strnombre_empresa'],"strrif_empresa":existe_manufacturer['strrif_empresa'],"strnombre_representante":existe_manufacturer['strnombre_representante'],"stremail":existe_manufacturer['strcorreo'],"id_tipo_empresa":existe_manufacturer['id_tipo_empresa'],"token":_token})                                                      
-                                resp.status_code = 200
-                                return sendResponse(resp)                                      
+            _strcontrasena = _json['strpassword']
+            if request.method == 'POST': 
+                if not _strcodigo_acceso:
+                    resp = jsonify({"status":"error", "msj": "Debe ingresar un código de acceso"})
+                    return sendResponse(resp)
+
+                if not _strcontrasena:
+                    resp = jsonify({"status":"error", "msj": "Debe ingresar una contraseña"})
+                    return sendResponse(resp)
+                _hashed_password = hashlib.md5(_strcontrasena.encode())
+                existe_manufacturer=validateUser(_strcodigo_acceso)
+                if existe_manufacturer:
+                    if existe_manufacturer['id_status_user']==2:  
+                        if (existe_manufacturer['strcontrasena']==_hashed_password.hexdigest()):                      
+                            caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
+                            longitud = 32  # La longitud que queremos
+                            _token = ''.join(random.choice(caracteres) for _ in range(longitud))
+                            resp = jsonify({"status":"success", "msj":"El fabricante logeado","strnombre_empresa":existe_manufacturer['strnombre_empresa'],"strrif_empresa":existe_manufacturer['strrif_empresa'],"strnombre_representante":existe_manufacturer['strnombre_representante'],"stremail":existe_manufacturer['strcorreo_usuario'],"id_tipo_empresa":existe_manufacturer['id_tipo_empresa'],"id_rol":existe_manufacturer['id_rol'],"token":_token})                                                      
+                            resp.status_code = 200
+                            return sendResponse(resp) 
                         else:
-                            resp = jsonify({"status": 'warning', "msj": "El fabricante esta inactivo"})
+                            resp = jsonify({"status": 'warning', "msj": "La contraseña es inválida"})
                             return sendResponse(resp)
                     else:
-                        resp = jsonify({"status": 'error', "msj": "El fabricante no existe"})
+                        resp = jsonify({"status": 'warning', "msj": "El usuario esta inactivo"})
                         return sendResponse(resp)
-            else:
-                resp = jsonify({"status":"error", "msj": "Debe ingresar un código de acceso"})
-                return sendResponse(resp)
+                else:
+                    resp = jsonify({"status": 'error', "msj": "El usuario del fabricante no existe"})
+                    return sendResponse(resp)
         else:
             resp = jsonify({"status":"error", "msj": "Acceso denegado"})
             return sendResponse(resp)
     except Exception as e:
         print(e)
 
-def validateCode(strcodigo_acceso):
+def validateUser(strcodigo_acceso):
     try:
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute("SELECT * FROM  vw_company WHERE id_status=4 AND id_tipo_empresa=1 AND strcodigo_acceso=%s",strcodigo_acceso)
+        sql="SELECT * FROM  vw_manufacturer_user WHERE id_status_user=2 AND id_rol=2 AND strusuario=%s "
+        print(sql,strcodigo_acceso)
+        data=(strcodigo_acceso)
+        cursor.execute(sql,data)
         row = cursor.fetchone()
         return row
     except Exception as e:
