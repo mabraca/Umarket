@@ -150,7 +150,7 @@ class Company():
             #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM dt_empresa WHERE id_empresa=%s"       
+            sql="SELECT * FROM vw_company WHERE id_empresa=%s"       
             print(sql)    
             cursor.execute(sql,id_empresa)
             row = cursor.fetchone()
@@ -202,3 +202,30 @@ class Company():
             print(e)
         finally:
             pass
+    
+    def validatedAcountBank():
+        try:
+            pass
+        except expression as identifier:
+            pass
+        finally:
+            pass
+    
+    def updateCompany(self,nombre_campo,valor_campo,id_empresa):
+        try:
+            conn=mysql.connect()
+            cursor=conn.cursor(pymysql.cursors.DictCursor)
+            if type(valor_campo)==int:
+                sql="UPDATE dt_empresa SET %s=%s WHERE id_empresa=%s "%(nombre_campo,valor_campo,id_empresa)
+            elif type(valor_campo)==str:
+                sql="UPDATE dt_empresa SET %s='%s' WHERE id_empresa=%s "%(nombre_campo,valor_campo,id_empresa)
+
+            print(sql)
+            cursor.execute(sql)
+            conn.commit()
+            return True
+        except Exception as e:
+            print(e)
+        finally:
+            conn.close()
+            cursor.close()

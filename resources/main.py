@@ -14,6 +14,9 @@ class Main():
     _data=None
     _campos=None
     _hoy=None
+    _debug=False
+    _host= 
+
 
     #Datos de configuración del servidor de correo
     _smpt_host='just64.justhost.com'
@@ -70,9 +73,11 @@ class Main():
                         condicion=' WHERE '+ condicion
                 
                 sql=" SELECT %s FROM %s %s "%(campos, tabla, condicion)
-
-
-
+                if debug:
+                    print(sql)
+                cursor.execute(sql, data)
+                resource=cursor.lastrowid
+                return resource
         except Exception as e:
             print(e)
         finally:

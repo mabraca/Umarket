@@ -7,17 +7,12 @@ from werkzeug.utils import secure_filename
 from .moduser import *
 
 @modules.route('/business/register', methods=['POST'])
-def registerBussines():
+def bussinesRegister():
     try:
         print("entro en /bussiness/register ")
-        retail= Company() #Instancia  
-        print("paso instancia")   
+        retail= Company() #Instancia   
         _json=json.loads(request.values['data'])
         print(_json)      
-        print(request.values)
-        print(request.files)    
-        print("asignacion de propiedades")         
-        print(_json['strname_company'])
         retail.strnombre_empresa=str(_json['strname_company'])
         retail.strrif_empresa=str(_json['strrif_company'])
         retail.strnombre_representante=str(_json['strlegal_representative'])
@@ -265,7 +260,7 @@ def retailValidated():
                 resp = jsonify({"status":'error', "msj":"El Comercio no existe"})
                 return sendResponse(resp)  
             else:
-                _id_tipo_empresa=existe_retail['id_tipo']
+                _id_tipo_empresa=existe_retail['id_tipo_empresa']
                 if existe_retail['id_status']==3:
                     if _id_tipo_empresa==2:
                         print("entro en validar")
@@ -372,3 +367,82 @@ def businessFiles():
         if _id_empresa:
             cursor.close()
             conn.close()
+    
+
+@modules.route('/business/update', methods=['POST'])
+def businessUpdate():
+    try:
+        if request.method == 'POST':   
+            retail= Company() #Instancia  
+
+            print("paso instancia")   
+            _json= request.get_json(force=True)
+            print(_json)
+            _id_empresa=_json['id_empresa']   
+            _nombre_campo=_json['nombre_campo']         
+            _valor_campo=_json['valor_campo']
+
+            if not _id_empresa:
+                resp = jsonify({"status":'error', "msj":"De enviar el id del Comercio"})
+                return sendResponse(resp)  
+            
+            if not _nombre_campo:
+                resp = jsonify({"status":'error', "msj":"De enviar el nombre del campo"})
+                return sendResponse(resp)  
+            
+            if not _valor_campo:
+                resp = jsonify({"status":'error', "msj":"De enviar el valor del campo"})
+                return sendResponse(resp)  
+
+            existe_retail=retail.companyView(_id_empresa) 
+            print("existe->"+str(existe_retail))
+            if existe_retail==None:
+                resp = jsonify({"status":'error', "msj":"El Comercio no existe"})
+                return sendResponse(resp)  
+            else:
+                _id_tipo_empresa=existe_retail['id_tipo_empresa']
+               
+                if _id_tipo_empresa==2:
+                    print("Actualizar retail")
+                    update_retail=retail.updateCompany(_nombre_campo,_valor_campo,_id_empresa)                        
+                else:
+                    resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Comercio"})
+                    return sendResponse(resp)  
+
+            if update_retail:                                     
+                    resp = jsonify({"status":'success', "msj":"El comercio fue actualizado con éxito"})
+                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status":'error', "msj":"El comercio no pudo ser actualizado"})
+                return sendResponse(resp)          
+        else:
+            resp = jsonify({"status":'warning', "msj":"De seleccionar un Comercio"})
+            return sendResponse(resp)   
+    except Exception as e:
+        print(e)
+
+
+@modules.route('/business/query', methods=['POST'])
+def retailQuery():
+    try:
+        retail= Company() #Instancia  
+
+        if request.method=='POST':
+            _json= request.get_json(force=True)
+            _id_empresa=_json['id_empresa']
+            existe_retail=retail.companyView(_id_empresa)
+            
+            if existe_retail:
+                if existe_retail['id_tipo_empresa']==2:
+                    resp = jsonify(existe_retail)            
+                    resp.status_code = 200
+                    return sendResponse(resp)
+                else:
+                    resp = jsonify({"status":'warning', "msj":"La empresa de ser tipo comercio"})
+                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status":'warning', "msj":"El comercio no existe"})
+                return sendResponse(resp)    
+    except Exception as e:
+        print(e)
+   

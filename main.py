@@ -1,7 +1,7 @@
 import socket, json
 from db_config import mysql, app, mail
 from flaskext.mysql import MySQL, pymysql
-from flask import flash, request,make_response, current_app, Blueprint, jsonify, Response, session 
+from flask import flash, request,make_response, current_app, Blueprint, jsonify, Response, session, send_file, send_from_directory 
 from werkzeug import generate_password_hash, check_password_hash
 import hashlib
 from flask_mail import Mail, Message
@@ -11,6 +11,7 @@ import threading
 from modules import *
 from flask import copy_current_request_context
 import db_config, string,random
+
 
 app.register_blueprint(modules)
 
