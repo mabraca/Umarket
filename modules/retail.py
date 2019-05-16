@@ -383,15 +383,15 @@ def businessUpdate():
             _valor_campo=_json['valor_campo']
 
             if not _id_empresa:
-                resp = jsonify({"status":'error', "msj":"De enviar el id del Comercio"})
+                resp = jsonify({"status":'error', "msj":"Debe enviar el id del Comercio"})
                 return sendResponse(resp)  
             
             if not _nombre_campo:
-                resp = jsonify({"status":'error', "msj":"De enviar el nombre del campo"})
+                resp = jsonify({"status":'error', "msj":"No puede enviar el nombre del campos vacio"})
                 return sendResponse(resp)  
             
             if not _valor_campo:
-                resp = jsonify({"status":'error', "msj":"De enviar el valor del campo"})
+                resp = jsonify({"status":'error', "msj":"No puede enviar el valor del campo vacio"})
                 return sendResponse(resp)  
 
             existe_retail=retail.companyView(_id_empresa) 

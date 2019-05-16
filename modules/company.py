@@ -218,7 +218,7 @@ class Company():
             if type(valor_campo)==int:
                 sql="UPDATE dt_empresa SET %s=%s WHERE id_empresa=%s "%(nombre_campo,valor_campo,id_empresa)
             elif type(valor_campo)==str:
-                sql="UPDATE dt_empresa SET %s='%s' WHERE id_empresa=%s "%(nombre_campo,valor_campo,id_empresa)
+                sql="UPDATE dt_empresa SET %s=trim('%s') WHERE id_empresa=%s "%(nombre_campo,valor_campo,id_empresa)
 
             print(sql)
             cursor.execute(sql)
