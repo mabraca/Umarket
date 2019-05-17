@@ -48,7 +48,7 @@ class Company():
             else:
                 self.id_status=3
             # save edits
-            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo,id_status) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
+            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo_empresa,id_status) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
             data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo,self.id_status)
             conn = mysql.connect()
             print(sql,data)
@@ -114,7 +114,7 @@ class Company():
         try:
             conn=mysql.connect()
             cursor=conn.cursor(pymysql.cursors.DictCursor)
-            sql="UPDATE dt_empresa SET id_status=4 WHERE id_empresa=%s AND id_tipo=%s"
+            sql="UPDATE dt_empresa SET id_status=4 WHERE id_empresa=%s AND id_tipo_empresa=%s"
             data=(id_empresa,id_tipo_empresa)
             afectado=cursor.execute(sql,data)
             conn.commit()
@@ -229,3 +229,4 @@ class Company():
         finally:
             conn.close()
             cursor.close()
+    

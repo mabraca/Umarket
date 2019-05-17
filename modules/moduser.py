@@ -92,7 +92,6 @@ def users():
     finally:
         cursor.close()
         conn.close()
-        
 
 @modules.route('/user', methods=['POST'])
 def user():
@@ -167,7 +166,7 @@ def updateUser():
             # do not save password as a plain text
             _hashed_password = generate_password_hash(_strcontrasena)
             # save edits
-            sql = "UPDATE dt_usuarios SET strcorreo_electronico=%s,strcontrasena=%s WHERE id=%s"
+            sql = "UPDATE dt_usuarios SET strcorreo=%s,strcontrasena=%s WHERE id=%s"
             data = (_strcorreo, _hashed_password, _id)
             conn = mysql.connect()
             cursor = conn.cursor()
@@ -214,7 +213,6 @@ def user_validate(strcorreo):
     finally:
         cursor.close()
         conn.close()
-
 
 #Funcion que valida si el correo electronico existe
 def email_validate(strcorreo):
@@ -327,8 +325,6 @@ def addUserRetail(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
     finally:
         cursor.close()
         conn.close()
-
-
 
 def addUserManufacturer(strusuario,strcorreo,strcontrasena,strnombres,id_empresa):
     try:

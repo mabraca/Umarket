@@ -21,6 +21,8 @@ def bussinesRegister():
         retail.strcorreo=str(_json['stremail'])
         retail.strtelefono=str(_json['strphone'])
         retail.id_tipo=_json['id_type']
+        strcuenta=_json['strcuenta']
+        strcuenta_bancaria=strcuenta.replace('-','')
 
         if not _json['id_type']==2:
             resp = jsonify({"status":'error', "msj":"El tipo de empresa debe ser Comercio"})
@@ -67,6 +69,14 @@ def bussinesRegister():
             if not strcontrasena==strverifcontrasena:
                 resp = jsonify({"status":'error', "msj":"Las contraseñas no coinciden"})
                 return sendResponse(resp)
+            
+            if not strcuenta_bancaria:
+                resp = jsonify({"status":'error', "msj":"Debe ingresar cuenta bancaria"})
+                return sendResponse(resp)
+            else:
+                if not len(strcuenta_bancaria)==20 :
+                    resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta de 20"})
+                    return sendResponse(resp)
 
             print(retail.strrif_empresa)                    
             existe_company=retail.existeCompany() 
@@ -160,26 +170,24 @@ def bussinesRegister():
                     datfecha=time.strftime("%Y-%m-%d")
                     print(datfecha,retail.id_empresa,ruta_comercio)
                     documentos_guardados=retail.registerDocumentsCompany(ruta_comercio,retail.id_empresa,datfecha)
-
-                    """filename_rs= "RS_"+str(retail.id_empresa)+"."+secure_filename(fileReciboServicio.filename)
-                    fileReciboServicio.save(os.path.join(ruta_comercio,filename_rs))
-                    print(filename_rs+"recibo servicios")
-                    urlArchivoRs=str(ruta_comercio+"/"+filename_rs)
-                    documentosRS=retail.registerDocumentsCompany(urlArchivoRs,retail.id_empresa,6)"""    
                     
-
                     if documentos_guardados:
                         adduser_retail=addUserRetail(strusuario,retail.strcorreo,strcontrasena,retail.strnombre_representante,retail.id_empresa)
                         if adduser_retail:
-                            #send_mailCompany(retail.strcorreo,retail.strnombre_empresa)
-                            @copy_current_request_context
-                            def send_message(strcorreo,strnombre_empresa):
-                                send_mailCompany(strcorreo,strnombre_empresa)
+                            datos_bancarios=retail.registerDataBank(retail.id_empresa,strcuenta_bancaria)
+                            if datos_bancarios:
+                                #send_mailCompany(retail.strcorreo,retail.strnombre_empresa)
+                                @copy_current_request_context
+                                def send_message(strcorreo,strnombre_empresa):
+                                    send_mailCompany(strcorreo,strnombre_empresa)
 
-                            sender= threading.Thread(name='mail_sender',target=send_message, args=(retail.strcorreo,retail.strnombre_empresa))
-                            sender.start()  
-                            resp = jsonify({"status":'success', "msj":"El comercio fue preafiliado con éxito"})
-                            return sendResponse(resp) 
+                                sender= threading.Thread(name='mail_sender',target=send_message, args=(retail.strcorreo,retail.strnombre_empresa))
+                                sender.start()  
+                                resp = jsonify({"status":'success', "msj":"El comercio fue preafiliado con éxito"})
+                                return sendResponse(resp) 
+                            else:
+                                resp = jsonify({"status":'error', "msj":"El comercio no fue preafiliado"})                    
+                                return sendResponse(resp)   
                         else:
                             retailDelDoc=retail.deleteDocuments()
                             if retailDelDoc:
@@ -274,9 +282,7 @@ def retailValidated():
                     return sendResponse(resp)  
 
             if validar:                
-                if activarUser:
-                    print("envio de correo  activacion")
-                    #send_mailCompanyActivation(existe_retail['strcorreo'],existe_retail['strnombre_empresa'])
+                if activarUser:                    
                     #Envío de correo usando hilos
                     @copy_current_request_context
                     def send_message(strcorreo,strnombre_empresa):
@@ -295,7 +301,6 @@ def retailValidated():
             return sendResponse(resp)   
     except Exception as e:
         print(e)
-
 
 @modules.route('/business/login', methods=['POST'])
 def bussinessLogin():
@@ -404,7 +409,7 @@ def businessUpdate():
                
                 if _id_tipo_empresa==2:
                     print("Actualizar retail")
-                    update_retail=retail.updateCompany(_nombre_campo,_valor_campo,_id_empresa)                        
+                    update_retail=retail.updateCompany(_nombre_campo,_valor_campo,_id_empresa) 
                 else:
                     resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Comercio"})
                     return sendResponse(resp)  

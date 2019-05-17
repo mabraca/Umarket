@@ -27,6 +27,7 @@ def registerManufacturer():
         manufacturer.id_tipo=_json['id_type']
         manufacturer.blnafiliacion=_json['validated']
         strcuenta=_json['strcuenta']
+        strcuenta_bancaria=strcuenta.replace('-','')
         if not _json['id_type']==1:
             resp = jsonify({"status":'error', "msj":"El tipo de empresa debe ser Fabricante"})
             return sendResponse(resp)
@@ -65,11 +66,12 @@ def registerManufacturer():
             if not manufacturer.id_tipo:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
                 return sendResponse(resp)
-            if not strcuenta:
-                resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
+                
+            if not strcuenta_bancaria:
+                resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta bancaria"})
                 return sendResponse(resp)
             else:
-                if len(strcuenta)<20 :
+                if not len(strcuenta_bancaria)==20 :
                     resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta de 20"})
                     return sendResponse(resp)
 
@@ -187,7 +189,7 @@ def registerManufacturer():
                                 resp = jsonify({"status":'success', "msj":"El Fabricante no fue registrado"})
                                 return sendResponse(resp)
                         else:
-                            datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,strcuenta)
+                            datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,strcuenta_bancaria)
                             if datos_bancarios:
                                 print("se envio correo de preafilicion")                    
                                 @copy_current_request_context
@@ -268,7 +270,7 @@ def manufacturerValidate():
                 resp = jsonify({"status":'error', "msj":"El Fabricante no existe"})
                 return sendResponse(resp)  
             else:
-                _id_tipo_empresa=existe_manufacturer['id_tipo']
+                _id_tipo_empresa=existe_manufacturer['id_tipo_empresa']
                 if existe_manufacturer['id_status']==3:
                     if _id_tipo_empresa==1:
                         validar=manufacturer.validateCompany(_id_empresa,_id_tipo_empresa)
