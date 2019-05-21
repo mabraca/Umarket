@@ -42,7 +42,7 @@ def send_mailCompanyActivation(email,company):
 
 def sendResponse(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'multipart/form-data')
+    response.headers.add('Content-Type', 'application/json')
     return response
 
 @app.errorhandler(404)

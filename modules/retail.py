@@ -9,14 +9,16 @@ from .moduser import *
 @modules.route('/business/register', methods=['POST'])
 def bussinesRegister():
     try:
-        print("entro en /bussiness/register ")
         retail= Company() #Instancia   
-        _json=json.loads(request.values['data'])
-        print(_json)      
+        _json=json.loads(request.values['data'])     
         retail.strnombre_empresa=str(_json['strname_company'])
         retail.strrif_empresa=str(_json['strrif_company'])
         retail.strnombre_representante=str(_json['strlegal_representative'])
         retail.strdireccion =str(_json['straddress'])
+        retail.strcodigo_postal=_json['strpostal_code']
+        retail.id_estado=int(_json['id_estado'])
+        retail.id_municipio=int(_json['id_municipio'])
+        retail.id_ciudad=int(_json['id_ciudad'])
         strusuario=str(_json['struser'])
         retail.strcorreo=str(_json['stremail'])
         retail.strtelefono=str(_json['strphone'])
@@ -29,8 +31,6 @@ def bussinesRegister():
             return sendResponse(resp)
         strcontrasena=_json['strpassword']
         strverifcontrasena=_json['verifpassword']
-
-        print("antes de validar")
         # validate the received values
         if request.method == 'POST':     
             print("entró en validacion post")
@@ -48,9 +48,24 @@ def bussinesRegister():
             if not retail.strnombre_representante:
                 resp = jsonify({"status":"error","msj":"Debe ingresar el nombre del representante legal"})
                 return sendResponse(resp)
+            
+            if not retail.strcodigo_postal:
+                resp = jsonify({"status":"error","msj":"Debe ingresar un código postal"})
 
             if not retail.strdireccion:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar una dirección"})
+                return sendResponse(resp)
+            
+            if not retail.id_estado:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un estado"})
+                return sendResponse(resp)
+            
+            if not retail.id_ciudad:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar una ciudad"})
+                return sendResponse(resp)
+            
+            if not retail.id_municipio:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un municipio"})
                 return sendResponse(resp)
             
             if not retail.strcorreo:
@@ -64,8 +79,7 @@ def bussinesRegister():
             if not retail.id_tipo:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
                 return sendResponse(resp)
-            print("antes de validar company")
-            
+
             if not strcontrasena==strverifcontrasena:
                 resp = jsonify({"status":'error', "msj":"Las contraseñas no coinciden"})
                 return sendResponse(resp)
@@ -91,14 +105,9 @@ def bussinesRegister():
                 return sendResponse(resp)
             else:
                 comercio=retail.registerCompany()
-                if comercio:     
-                    print("registro")                                
+                if comercio:                                  
                     retail.id_empresa=comercio
-                    print("files abajo")
-                    
-                    print(request.files)  
-                    if request.files:
-                        print("request.files")
+                    if request.files:            
                         fileRegistroMercantil=request.files['file[0]']
                         fileRif=request.files['file[1]']
                         fileCi=request.files['file[2]']
@@ -256,24 +265,21 @@ def retailValidated():
     try:
         if request.method == 'POST':   
             retail= Company() #Instancia  
-            print("paso instancia")   
             _json= request.get_json(force=True)
-            _id_empresa=_json['id_empresa']            
-            if not _id_empresa:
+            retail.id_empresa=_json['id_empresa']         
+            if not retail.id_empresa:
                 resp = jsonify({"status":'error', "msj":"De seleccionar un Comercio"})
                 return sendResponse(resp)  
-            existe_retail=retail.companyView(_id_empresa) 
-            print("existe->"+str(existe_retail))
+            existe_retail=retail.companyView() 
             if existe_retail==None:
                 resp = jsonify({"status":'error', "msj":"El Comercio no existe"})
                 return sendResponse(resp)  
             else:
                 _id_tipo_empresa=existe_retail['id_tipo_empresa']
                 if existe_retail['id_status']==3:
-                    if _id_tipo_empresa==2:
-                        print("entro en validar")
-                        validar=retail.validateCompany(_id_empresa,_id_tipo_empresa)
-                        activarUser=activate_userRetail(_id_empresa)                    
+                    if _id_tipo_empresa==2:                    
+                        validar=retail.validateCompany(retail.id_empresa,_id_tipo_empresa)
+                        activarUser=activate_userRetail(retail.id_empresa)                    
                     else:
                         resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Comercio"})
                         return sendResponse(resp)  
@@ -314,8 +320,6 @@ def bussinessLogin():
                 existe_user=userBussiness_validate(_strusuario)
                 _hashed_password = hashlib.md5(_strcontrasena.encode())
                 if existe_user:
-                    print("existe user")
-                    print(existe_user)
                     if existe_user['id_status_user']==2 and existe_user['id_empresa']:
                         if (existe_user['strcontrasena']==_hashed_password.hexdigest()):
                             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
@@ -378,11 +382,8 @@ def businessFiles():
 def businessUpdate():
     try:
         if request.method == 'POST':   
-            retail= Company() #Instancia  
-
-            print("paso instancia")   
+            retail= Company() #Instancia    
             _json= request.get_json(force=True)
-            print(_json)
             _id_empresa=_json['id_empresa']   
             _nombre_campo=_json['nombre_campo']         
             _valor_campo=_json['valor_campo']
@@ -400,7 +401,6 @@ def businessUpdate():
                 return sendResponse(resp)  
 
             existe_retail=retail.companyView(_id_empresa) 
-            print("existe->"+str(existe_retail))
             if existe_retail==None:
                 resp = jsonify({"status":'error', "msj":"El Comercio no existe"})
                 return sendResponse(resp)  
@@ -408,7 +408,6 @@ def businessUpdate():
                 _id_tipo_empresa=existe_retail['id_tipo_empresa']
                
                 if _id_tipo_empresa==2:
-                    print("Actualizar retail")
                     update_retail=retail.updateCompany(_nombre_campo,_valor_campo,_id_empresa) 
                 else:
                     resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Comercio"})
@@ -431,11 +430,10 @@ def businessUpdate():
 def retailQuery():
     try:
         retail= Company() #Instancia  
-
         if request.method=='POST':
             _json= request.get_json(force=True)
-            _id_empresa=_json['id_empresa']
-            existe_retail=retail.companyView(_id_empresa)
+            retail.id_empresa=_json['id_empresa']
+            existe_retail=retail.companyView()
             
             if existe_retail:
                 if existe_retail['id_tipo_empresa']==2:

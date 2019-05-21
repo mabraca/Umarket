@@ -282,6 +282,40 @@ def activate_user(token):
         cursor.close()
         conn.close()
 
+@modules.route('/regepassword', methods=['POST'])   
+def regenePassword():
+    try:
+        _json = request.json
+        _id = _json['id_usuario']
+        _strcorreo = _json['stremail']
+        _strusuario = _json['struser']
+        _strcontrasena = _json['strpassword']
+        _strnombres = _json['strname']
+        _strapellidos = _json['strsurname']
+        _bt_estatus_id = _json['id_status']
+        # validate the received values
+        if _strcorreo and _strcontrasena and _id and request.method == 'POST':
+            # do not save password as a plain text
+            _hashed_password = generate_password_hash(_strcontrasena)
+            # save edits
+            sql = "UPDATE dt_usuarios SET strcorreo=%s,strcontrasena=%s WHERE id=%s"
+            data = (_strcorreo, _hashed_password, _id)
+            conn = mysql.connect()
+            cursor = conn.cursor()
+            cursor.execute(sql, data)
+            conn.commit()
+            resp = jsonify({"status":"success","msj":"El usuario fue actualizado"})
+            resp.status_code = 200
+            return sendResponse(resp)
+        else:
+            return not_found()
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def activate_userRetail(id_empresa):
     try:    
         print("activar usuario")
@@ -382,6 +416,109 @@ def deleteUserManufacturer():
         resp = jsonify({"status":"success","msj":"El usuario fue eliminado"})
         resp.status_code = 200
         return sendResponse(resp)
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@modules.route('/state/list') 
+def stateList():
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM dt_estados ORDER BY id_estado ")
+        rows = cursor.fetchall()
+        if rows:
+            resp = jsonify(rows)            
+            resp.status_code = 200
+            return sendResponse(resp)
+        elif not rows:
+            resp = jsonify({"status":'error', "msj":"No se encuentran estados registrados"})
+            return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@modules.route('/city_municipality/search', methods=['POST'])
+def cityMunicipalitySearch():
+    try:
+        _json= request.get_json(force=True)
+        print("municipio")
+        print(_json)
+        _id_estado = _json['id_estado']
+        if not _id_estado:
+            resp = jsonify({"status":'error', "msj":"Debe seleccionar un estado"})
+            return sendResponse(resp) 
+
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT id_municipio,id_estado, strnombre_municipio FROM dt_municipios WHERE id_estado=%s ORDER BY id_estado,id_municipio ",_id_estado)
+        rows1 = cursor.fetchall()
+
+        cursor.execute("SELECT id_ciudad,id_estado,strnombre_ciudad FROM dt_ciudades WHERE id_estado=%s ORDER BY id_estado,id_ciudad ",_id_estado)
+        rows2 = cursor.fetchall()
+        if rows1 and rows2:
+            data= ({'municipios':rows1, 'ciudades':rows2})
+            resp = jsonify(data)            
+            resp.status_code = 200
+            return sendResponse(resp)
+        elif not rows:
+            resp = jsonify({"status":'error', "msj":"No se encuentran estados municipios y ciudades"})
+            return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+
+@modules.route('/municipality/search', methods=['POST'])
+def municipalitySearch():
+    try:
+        _json= request.get_json(force=True)
+        print("municipio")
+        print(_json)
+        _id_estado = _json['id_estado']
+        if not _id_estado:
+            resp = jsonify({"status":'error', "msj":"Debe seleccionar un estado"})
+            return sendResponse(resp) 
+
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM dt_municipios WHERE id_estado=%s ORDER BY id_municipio ",_id_estado)
+        rows = cursor.fetchall()
+        if rows:
+            resp = jsonify(rows)            
+            resp.status_code = 200
+            return sendResponse(resp)
+        elif not rows:
+            resp = jsonify({"status":'error', "msj":"No se encuentran estados municipios"})
+            return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+
+
+@modules.route('/city/search', methods=['POST'])
+def citySearch():
+    try:
+        _json= request.get_json(force=True)
+        print("city")
+        print(_json)
+        _id_estado = _json['id_estado']
+        if not _id_estado:
+            resp = jsonify({"status":'error', "msj":"Debe seleccionar un estado"})
+            return sendResponse(resp) 
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM dt_ciudades WHERE id_estado=%s ORDER BY id_estado, id_ciudad ",_id_estado)
+        rows = cursor.fetchall()
+        if rows:
+            resp = jsonify(rows)            
+            resp.status_code = 200
+            return sendResponse(resp)
+        elif not rows:
+            resp = jsonify({"status":'error', "msj":"No se encuentran estados registrados"})
+            return sendResponse(resp)      
     except Exception as e:
         print(e)
     finally:

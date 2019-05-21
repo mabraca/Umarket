@@ -21,13 +21,18 @@ def registerManufacturer():
         manufacturer.strnombre_empresa=str(_json['strname_company'])
         manufacturer.strrif_empresa=str(_json['strrif_company'])
         manufacturer.strnombre_representante=str(_json['strlegal_representative'])
+        manufacturer.strcedula_representante=_json['strci_representative']
         manufacturer.strdireccion =str(_json['straddress'])
+        manufacturer.id_estado=int(_json['id_estado'])
+        manufacturer.id_municipio=int(_json['id_municipio'])
+        manufacturer.id_ciudad=int(_json['id_ciudad'])
         manufacturer.strcorreo=str(_json['stremail'])
         manufacturer.strtelefono=str(_json['strphone'])
         manufacturer.id_tipo=_json['id_type']
         manufacturer.blnafiliacion=_json['validated']
-        strcuenta=_json['strcuenta']
-        strcuenta_bancaria=strcuenta.replace('-','')
+        manufacturer.strcodigo_postal=_json['strpostal_code']
+        strcuenta=_json['strcuenta']        
+        manufacturer.strcuenta=strcuenta.replace('-','')
         if not _json['id_type']==1:
             resp = jsonify({"status":'error', "msj":"El tipo de empresa debe ser Fabricante"})
             return sendResponse(resp)
@@ -47,12 +52,31 @@ def registerManufacturer():
                 resp = jsonify({"status":'error', "msj":"Debe ingresar un R.I.F válido"})
                 return sendResponse(resp)
             
+            if not manufacturer.strcedula_representante:
+                resp = jsonify({"status":"error","msj":"Debe ingresar la cédula del representante legal"})
+                return sendResponse(resp)
+            
             if not manufacturer.strnombre_representante:
                 resp = jsonify({"status":"error","msj":"Debe ingresar el nombre del representante legal"})
                 return sendResponse(resp)
+            
+            if not manufacturer.strcodigo_postal:
+                resp = jsonify({"status":"error","msj":"Debe ingresar un código postal"})
 
             if not manufacturer.strdireccion:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar una dirección"})
+                return sendResponse(resp)
+            
+            if not manufacturer.id_estado:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un estado"})
+                return sendResponse(resp)
+            
+            if not manufacturer.id_ciudad:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar una ciudad"})
+                return sendResponse(resp)
+            
+            if not manufacturer.id_municipio:
+                resp = jsonify({"status":'error', "msj":"Debe seleccionar un municipio"})
                 return sendResponse(resp)
             
             if not manufacturer.strcorreo:
@@ -67,11 +91,11 @@ def registerManufacturer():
                 resp = jsonify({"status":'error', "msj":"Debe ingresar tipo empresa"})
                 return sendResponse(resp)
                 
-            if not strcuenta_bancaria:
+            if not manufacturer.strcuenta:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta bancaria"})
                 return sendResponse(resp)
             else:
-                if not len(strcuenta_bancaria)==20 :
+                if not len(manufacturer.strcuenta)==20 :
                     resp = jsonify({"status":'error', "msj":"Debe ingresar una cuenta de 20"})
                     return sendResponse(resp)
 
@@ -189,7 +213,7 @@ def registerManufacturer():
                                 resp = jsonify({"status":'success', "msj":"El Fabricante no fue registrado"})
                                 return sendResponse(resp)
                         else:
-                            datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,strcuenta_bancaria)
+                            datos_bancarios=manufacturer.registerDataBank(manufacturer.id_empresa,manufacturer.strcuenta)
                             if datos_bancarios:
                                 print("se envio correo de preafilicion")                    
                                 @copy_current_request_context
@@ -260,11 +284,11 @@ def manufacturerValidate():
             manufacturer= Company() #Instancia  
             print("paso instancia")   
             _json= request.get_json(force=True)
-            _id_empresa=_json['id_empresa']            
-            if not _id_empresa:
+            manufacturer.id_empresa=_json['id_empresa']        
+            if not manufacturer.id_empresa:
                 resp = jsonify({"status":'error', "msj":"De seleccionar un Fabricante"})
                 return sendResponse(resp)  
-            existe_manufacturer=manufacturer.companyView(_id_empresa) 
+            existe_manufacturer=manufacturer.companyView() 
             print("existe->"+str(   ))
             if existe_manufacturer==None:
                 resp = jsonify({"status":'error', "msj":"El Fabricante no existe"})
@@ -273,7 +297,7 @@ def manufacturerValidate():
                 _id_tipo_empresa=existe_manufacturer['id_tipo_empresa']
                 if existe_manufacturer['id_status']==3:
                     if _id_tipo_empresa==1:
-                        validar=manufacturer.validateCompany(_id_empresa,_id_tipo_empresa)
+                        validar=manufacturer.validateCompany(manufacturer.id_empresa,_id_tipo_empresa)
                     else:
                         resp = jsonify({"status":'error', "msj":"La empresa debe ser de tipo Fabricante"})
                         return sendResponse(resp)  
@@ -281,8 +305,8 @@ def manufacturerValidate():
                     resp = jsonify({"status":'error', "msj":"El fabricate ya fue validado"})
                     return sendResponse(resp)  
             if validar:
-                usuario_fabricante=search_user(_id_empresa)
-                codigoAcceso=manufacturer.generateAccessCode(_id_empresa,usuario_fabricante['strusuario'])
+                usuario_fabricante=search_user(manufacturer.id_empresa)
+                codigoAcceso=manufacturer.generateAccessCode(manufacturer.id_empresa,usuario_fabricante['strusuario'])
                 if usuario_fabricante:
                     #send_mailCompanyCode(existe_manufacturer['strcorreo'],existe_manufacturer['strnombre_empresa'],codigoAcceso)
                     #Envío de correo usando hilos

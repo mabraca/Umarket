@@ -12,17 +12,18 @@ class Company():
     strnombre_empresa=None
     strrif_empresa=None
     strnombre_representante=None
+    strcedula_representante=None
     id_tipo=None
     strdireccion=None
     strcorreo=None
     strtelefono=None
     blnafiliacion=None
     id_status=None
-    #strcodigo_postal=None
-    #strhorario_empresa=None
-    #id_estado=None
-    #id_ciudad=None
-    #id_municipio=None
+    strcodigo_postal=None
+    strcuenta=None
+    id_estado=None
+    id_ciudad=None
+    id_municipio=None
     
     """def __init__(self):        
         self.id_empresa=id_empresa
@@ -47,13 +48,12 @@ class Company():
                 self.id_status=4
             else:
                 self.id_status=3
-            # save edits
-            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo_empresa,id_status) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)"
-            data = (self.strnombre_empresa,self.strrif_empresa,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo,self.id_status)
+            # save edits 
+            sql = "INSERT INTO dt_empresa(strnombre_empresa,strrif_empresa,strcedula_representante,strnombre_representante, strdireccion,strcorreo,strtelefono,id_tipo_empresa,id_status,strcodigo_postal,id_estado,id_ciudad,id_municipio) VALUES('{}', '{}', '{}', '{}', '{}', '{}', '{}',{}, {}, '{}', {}, {},{})".format(self.strnombre_empresa,self.strrif_empresa,self.strcedula_representante,self.strnombre_representante,self.strdireccion,self.strcorreo,self.strtelefono,self.id_tipo,self.id_status,self.strcodigo_postal,self.id_estado,self.id_ciudad,self.id_municipio)
             conn = mysql.connect()
-            print(sql,data)
+            print(sql)
             cursor = conn.cursor()
-            cursor.execute(sql, data)
+            cursor.execute(sql)
             resource=cursor.lastrowid
             print(resource)
             conn.commit()
@@ -145,16 +145,13 @@ class Company():
         finally:
             pass
                 
-    def companyView(self,id_empresa):
+    def companyView(self):
         try:   
-            #print(strrif_empresa)                 
             conn = mysql.connect()
             cursor = conn.cursor(pymysql.cursors.DictCursor)
-            sql="SELECT * FROM vw_company WHERE id_empresa=%s"       
-            print(sql)    
-            cursor.execute(sql,id_empresa)
+            sql="SELECT * FROM vw_company WHERE id_empresa=%s"        
+            cursor.execute(sql,self.id_empresa)
             row = cursor.fetchone()
-            print(row)
             return row
         except Exception as e:
             print(e)
