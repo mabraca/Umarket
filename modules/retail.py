@@ -377,7 +377,6 @@ def businessFiles():
             cursor.close()
             conn.close()
     
-
 @modules.route('/business/update', methods=['POST'])
 def businessUpdate():
     try:
@@ -424,7 +423,6 @@ def businessUpdate():
             return sendResponse(resp)   
     except Exception as e:
         print(e)
-
 
 @modules.route('/business/query', methods=['POST'])
 def retailQuery():

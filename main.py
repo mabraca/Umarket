@@ -40,9 +40,21 @@ def send_mailCompanyActivation(email,company):
     msg.html= render_template('email_afiliacion_retail.html', company=company)
     mail.send(msg)
 
+def send_mail_recover_user(strusuario,strcorreo,strnombre_empresa):
+    #msj = "Activacion de usuario"
+    msg= Message('Recuepración de usuario en UbiiMarket!', recipients = [strcorreo])
+    msg.html= render_template('email_recuperacion_usuario.html',strnombre_empresa=strnombre_empresa,strusuario=strusuario)
+    mail.send(msg)
+
+def send_mail_forgot_password(strcorreo,strnombres,token):
+    #msj = "Activacion de usuario"
+    msg= Message('Olvido de contraseña en UbiiMarket!', recipients = [strcorreo])
+    msg.html= render_template('email_recuperacion_password.html',strnombres=strnombres,token=token)
+    mail.send(msg)
+
 def sendResponse(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'application/json')
+    response.headers.add('Content-Type', 'application/json  ')
     return response
 
 @app.errorhandler(404)

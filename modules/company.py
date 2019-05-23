@@ -25,21 +25,6 @@ class Company():
     id_ciudad=None
     id_municipio=None
     
-    """def __init__(self):        
-        self.id_empresa=id_empresa
-        self.strnombre_empresa=strnombre_empresa
-        self.strrif_empresa=strrif_empresa
-        self.strnombre_representante=strnombre_representante
-        self.strdireccion=strdireccion
-        self.strcorreo=strcorreo
-        self.strtelefono=strtelefono
-        self.id_tipo=id_tipo"""
-        #self.strcodigo_postal=strcodigo_postal
-        #self.strhorario_empresa=strhorario_empresa
-        #self.id_estado=id_estado
-        #self.id_ciudad=id_ciudad
-        #self.id_municipio=id_municipio
-
 
     def registerCompany(self):
         try: 

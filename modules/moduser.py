@@ -37,10 +37,7 @@ def addUser():
             if not _id_rol:
                 resp = jsonify({"status":'error', "msj":"Debe ingresar un rol"})
                 return sendResponse(resp)                            
-            _hashed_password = hashlib.md5(_strcontrasena.encode())
-            print(_hashed_password)
-            #existe_user=user_validate(_strusuario)
-            #if not existe_user:                                
+            _hashed_password = hashlib.md5(_strcontrasena.encode())                            
             existe_email=email_validate(_strcorreo)
             if not existe_email:
                 # save edits
@@ -124,7 +121,7 @@ def userLogin():
                 existe_user=user_validate(_strcorreo)  
                 _hashed_password = hashlib.md5(_strcontrasena.encode())
                 if existe_user:
-                    if existe_user['id_status']==2:
+                    if existe_user['id_status_usuario']==2:
                         if (existe_user['strcontrasena']==_hashed_password.hexdigest()):
                             caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
                             longitud = 32  # La longitud que queremos
@@ -205,7 +202,7 @@ def user_validate(strcorreo):
         print(strcorreo)
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute("SELECT * FROM dt_usuarios WHERE strcorreo=%s",strcorreo)
+        cursor.execute("SELECT * FROM vw_users WHERE strcorreo_usuario=%s",strcorreo)
         row = cursor.fetchone()
         return row
     except Exception as e:
@@ -220,7 +217,7 @@ def email_validate(strcorreo):
         _strcorreo=strcorreo
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        sql="SELECT * FROM dt_usuarios WHERE strcorreo=%s"
+        sql="SELECT * FROM vw_users WHERE strcorreo_usuario=%s"
         cursor.execute(sql,_strcorreo)
         row = cursor.fetchone()
         return row
@@ -267,6 +264,22 @@ def token():
         cursor.close()
         conn.close()
 
+def tokenSearch(token):
+    try:
+        print("search token ")
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM vw_users WHERE token=%s",token)
+        row = cursor.fetchone()
+        print(row)
+        return row
+
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
 #Funcion que activa el usuario
 def activate_user(token):
     try:
@@ -281,40 +294,6 @@ def activate_user(token):
     finally:
         cursor.close()
         conn.close()
-
-@modules.route('/regepassword', methods=['POST'])   
-def regenePassword():
-    try:
-        _json = request.json
-        _id = _json['id_usuario']
-        _strcorreo = _json['stremail']
-        _strusuario = _json['struser']
-        _strcontrasena = _json['strpassword']
-        _strnombres = _json['strname']
-        _strapellidos = _json['strsurname']
-        _bt_estatus_id = _json['id_status']
-        # validate the received values
-        if _strcorreo and _strcontrasena and _id and request.method == 'POST':
-            # do not save password as a plain text
-            _hashed_password = generate_password_hash(_strcontrasena)
-            # save edits
-            sql = "UPDATE dt_usuarios SET strcorreo=%s,strcontrasena=%s WHERE id=%s"
-            data = (_strcorreo, _hashed_password, _id)
-            conn = mysql.connect()
-            cursor = conn.cursor()
-            cursor.execute(sql, data)
-            conn.commit()
-            resp = jsonify({"status":"success","msj":"El usuario fue actualizado"})
-            resp.status_code = 200
-            return sendResponse(resp)
-        else:
-            return not_found()
-    except Exception as e:
-        print(e)
-    finally:
-        cursor.close()
-        conn.close()
-
 
 def activate_userRetail(id_empresa):
     try:    
@@ -442,7 +421,6 @@ def stateList():
         cursor.close()
         conn.close()
 
-
 @modules.route('/city_municipality/search', methods=['POST'])
 def cityMunicipalitySearch():
     try:
@@ -519,6 +497,160 @@ def citySearch():
         elif not rows:
             resp = jsonify({"status":'error', "msj":"No se encuentran estados registrados"})
             return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+@modules.route('/forgot_password', methods=['POST'])
+def forgotPassword():
+    try:
+        _json= request.get_json(force=True)
+        print(_json['stremail'])
+        strcorreo = _json['stremail']
+        if not strcorreo:
+            resp = jsonify({"status":'error', "msj":"Debe ingresar un correo electrónico"})
+            return sendResponse(resp) 
+        existe_email=email_validate(strcorreo)
+        if existe_email:
+            if existe_email['id_status_user']==2:
+                caracteres = string.ascii_uppercase + string.ascii_lowercase + string.digits
+                longitud = 8  # La longitud que queremos
+                _token = ''.join(random.choice(caracteres+strcorreo) for _ in range(longitud))
+                generate_token_user(_token,strcorreo)
+                if existe_email['strapellidos']:
+                    strnombre_apellido=existe_email['strnombres']+ " " +existe_email['strapellidos']
+                else:
+                    strnombre_apellido=existe_email['strnombres']
+                #Envío de correo usando hilos
+                @copy_current_request_context
+                def send_message(strcorreo,strnombre_apellido,_token):
+                    send_mail_forgot_password(strcorreo,strnombre_apellido,_token)
+
+                sender= threading.Thread(name='mail_sender',target=send_message, args=(strcorreo,strnombre_apellido,_token))
+                sender.start()
+                resp = jsonify({"status":'success', "msj":"Su token fue enviado vía correo electrónico"})
+                return sendResponse(resp) 
+    
+            else:
+                resp = jsonify({"status":'error', "msj":"El usuario se encuentra inactivo"})
+                return sendResponse(resp)      
+        else:
+            resp = jsonify({"status":'error', "msj":"El correo ingresado no existe"})
+            return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+
+
+@modules.route('/change_password', methods=['POST'])
+def changePassword():
+    try:
+        _json= request.get_json(force=True)
+        print(_json)
+        _token=_json['token']
+        _strcontrasena=_json['strpassword']
+        _strverifcontrasena=_json['verifpassword']
+        if not _token:
+            resp = jsonify({"status":'error', "msj":"Debe ingresar un token"})
+            return sendResponse(resp) 
+
+        if not _strcontrasena:
+            resp = jsonify({"status":'error', "msj":"Debe ingresar una contraseña"})
+            return sendResponse(resp) 
+
+        if not _strcontrasena==_strverifcontrasena:
+            resp = jsonify({"status":'error', "msj":"Las contraseñas no coinciden"})
+            return sendResponse(resp)
+
+        _hashed_password = hashlib.md5(_strcontrasena.encode())   
+        existe_token=tokenSearch(_token)
+        print("paso")
+        if existe_token:
+            print("existe")
+            if existe_token['id_status_user']==1:
+                print("status 1")
+                change=changePasswordUser(existe_token['strcorreo_usuario'],_hashed_password)
+                print("change"+str(change))
+                resp = jsonify({"status":'succes', "msj":"Su contraseña fue cambiada exitosamente"})
+                return sendResponse(resp) 
+            else:
+                print("inactivo")
+                resp = jsonify({"status":'error', "msj":"El usuario se encuentra inactivo"})
+                return sendResponse(resp)      
+        else:
+            resp = jsonify({"status":'error', "msj":"El correo ingresado no existe"})
+            return sendResponse(resp)      
+    except Exception as e:
+        print(e)
+
+
+@modules.route('/recover_user', methods=['POST'])
+def recoverUser():
+    try:
+        _json= request.get_json(force=True)
+        print(_json)
+        _strcorreo = _json['stremail']
+        if not _strcorreo:
+            resp = jsonify({"status":'error', "msj":"Debe ingresar un correo electrónico"})
+            return sendResponse(resp) 
+        existe_email=email_validate(_strcorreo)
+        if existe_email:
+            if existe_email['id_rol']==2 or existe_email['id_rol']==3:
+                if existe_email['id_status_user']==2:
+                    strnombre_empresa=existe_email['strnombre_empresa']
+                    strusuario=existe_email['strusuario']
+                    strcorreo=existe_email['strcorreo']
+                    #Envío de correo usando hilos
+                    @copy_current_request_context
+                    def send_message(strusuario,strcorreo,strnombre_empresa):
+                        print("entro en envio")
+                        send_mail_recover_user(strusuario,strcorreo,strnombre_empresa)
+
+                    sender= threading.Thread(name='mail_sender',target=send_message, args=(strusuario,strcorreo,strnombre_empresa))
+                    sender.start()
+                    resp = jsonify({"status":'success', "msj":"Su usuario fue enviado vía correo electrónico"})                                    
+                    return sendResponse(resp)
+                else:
+                    resp = jsonify({"status":'error', "msj":"Su usuario se encuentro en el proceso de validación"})
+                    return sendResponse(resp)
+            else:
+                resp = jsonify({"status":'error', "msj":"El correo ingresado no existe"})
+                return sendResponse(resp) 
+
+        else:
+            resp = jsonify({"status":'error', "msj":"El correo ingresado no existe"})
+            return sendResponse(resp) 
+        
+    except Exception as e:
+        print(e)
+
+
+
+#Funcion que activa el usuario
+def generate_token_user(token,strcorreo):
+    try:
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        data=(token,strcorreo)
+        afectado=cursor.execute("UPDATE dt_usuarios SET token=%s, id_status=1 WHERE strcorreo=%s AND id_rol in(2,3,4)",data)
+        conn.commit()
+        return True
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+def changePasswordUser(strcorreo,strcontrasena):
+    try:    
+        print("cambio")
+        conn = mysql.connect()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        data=(strcontrasena.hexdigest(),strcorreo)
+        cursor.execute("UPDATE dt_usuarios SET strcontrasena=%s, id_status=2 WHERE strcorreo=%s",data)
+        conn.commit()
+        return True
     except Exception as e:
         print(e)
     finally:
